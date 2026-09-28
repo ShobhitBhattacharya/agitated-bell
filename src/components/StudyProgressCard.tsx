@@ -1,14 +1,14 @@
 import React from 'react';
 import { Trophy, Flame, BookOpenCheck } from 'lucide-react';
-import { getStudyProgress, getStudyStreak } from '../utils/chessKnowledgeBase';
+import { getStudyProgress } from '../utils/chessKnowledgeBase';
 
 interface StudyProgressCardProps {
   completedTopics: string[];
+  streakDays: number;
 }
 
-export const StudyProgressCard: React.FC<StudyProgressCardProps> = ({ completedTopics }) => {
+export const StudyProgressCard: React.FC<StudyProgressCardProps> = ({ completedTopics, streakDays }) => {
   const progress = getStudyProgress(completedTopics);
-  const streak = getStudyStreak(completedTopics);
 
   return (
     <div className="rounded-xl border border-[#312e2b] bg-[#21201d] p-3">
@@ -32,8 +32,8 @@ export const StudyProgressCard: React.FC<StudyProgressCardProps> = ({ completedT
             <Flame className="w-3.5 h-3.5 text-[#f59e0b]" />
             Streak
           </div>
-          <div className="mt-2 text-lg font-bold text-white">{streak}</div>
-          <div className="text-[10px] text-neutral-400">concepts completed</div>
+          <div className="mt-2 text-lg font-bold text-white">{streakDays}</div>
+          <div className="text-[10px] text-neutral-400">day streak</div>
         </div>
       </div>
 

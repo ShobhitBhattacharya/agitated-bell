@@ -7,6 +7,7 @@ import {
   getStudyProgress,
   getStudyStreak,
 } from '../utils/chessKnowledgeBase';
+import { getStudyStreakDays, markStudyTopicCompleted } from '../utils/progressStorage';
 
 describe('chess knowledge base', () => {
   it('returns topics for the opening principles category', () => {
@@ -49,5 +50,16 @@ describe('chess knowledge base', () => {
     const streak = getStudyStreak(['develop-first', 'central-control', 'king-safety']);
 
     expect(streak).toBeGreaterThanOrEqual(3);
+  });
+
+  it('records completion for the current topic and consecutive study dates', () => {
+    const progress = markStudyTopicCompleted(
+      { completedTopicIds: [], activityDates: [] },
+      'passed-pawns',
+      '2026-09-28'
+    );
+
+    expect(progress.completedTopicIds).toEqual(['passed-pawns']);
+    expect(getStudyStreakDays(progress.activityDates, '2026-09-29')).toBe(1);
   });
 });

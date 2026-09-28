@@ -31,17 +31,26 @@ import {
   getAdaptiveTrainerPrompt,
   TheoryLesson,
 } from './utils/studyTools';
-import { Bot, Swords, Sparkles, Loader2, Info, BookOpen, Target } from 'lucide-react';
+import { Bot, Swords, Sparkles, Loader2, Info, BookOpen, Target, House } from 'lucide-react';
 import { TheoryTrainer } from './components/TheoryTrainer';
 import { AdaptiveTrainer } from './components/AdaptiveTrainer';
 import { KnowledgeBasePanel } from './components/KnowledgeBasePanel';
 import { StudyRoadmap } from './components/StudyRoadmap';
 import { StudyProgressCard } from './components/StudyProgressCard';
+import { LearningHub } from './components/LearningHub';
+import { PuzzleRush } from './components/PuzzleRush';
+import { StudyLibrary } from './components/StudyLibrary';
 import {
   KnowledgeCategory,
   getKnowledgeTopicById,
   getNextStudyTopic,
 } from './utils/chessKnowledgeBase';
+import {
+  getStudyStreakDays,
+  loadStudyProgress,
+  markStudyTopicCompleted,
+  saveStudyProgress,
+} from './utils/progressStorage';
 
 const INITIAL_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
@@ -105,8 +114,16 @@ export const App: React.FC = () => {
   const [selectedTheoryLessonId, setSelectedTheoryLessonId] = useState<string>('scholars-mate');
   const [selectedKnowledgeCategory, setSelectedKnowledgeCategory] = useState<KnowledgeCategory>('opening-principles');
   const [selectedKnowledgeTopicId, setSelectedKnowledgeTopicId] = useState<string>('develop-first');
-  const [completedStudyTopics, setCompletedStudyTopics] = useState<string[]>(['develop-first']);
+  const [studyProgress, setStudyProgress] = useState(loadStudyProgress);
+  const completedStudyTopics = studyProgress.completedTopicIds;
+  const studyStreakDays = useMemo(() => getStudyStreakDays(studyProgress.activityDates), [studyProgress.activityDates]);
   const [lessonChallenge, setLessonChallenge] = useState<{ lessonId: string; targetMove: string } | null>(null);
+  const [activeView, setActiveView] = useState<'hub' | 'game' | 'puzzles' | 'openings' | 'endgames'>('hub');
+  const [puzzleRushRating, setPuzzleRushRating] = useState(800);
+
+  useEffect(() => {
+    saveStudyProgress(studyProgress);
+  }, [studyProgress]);
 
   // Worker Reference
   const workerRef = useRef<Worker | null>(null);
@@ -696,10 +713,9 @@ export const App: React.FC = () => {
   );
 
   const handleAdvanceStudyTopic = useCallback(() => {
-    if (!nextStudyTopic) return;
-    setSelectedKnowledgeTopicId(nextStudyTopic.id);
-    setCompletedStudyTopics((prev) => (prev.includes(nextStudyTopic.id) ? prev : [...prev, nextStudyTopic.id]));
-  }, [nextStudyTopic]);
+    setStudyProgress((progress) => markStudyTopicCompleted(progress, selectedKnowledgeTopicId));
+    if (nextStudyTopic) setSelectedKnowledgeTopicId(nextStudyTopic.id);
+  }, [nextStudyTopic, selectedKnowledgeTopicId]);
 
   const lessonSolved = useMemo(() => {
     if (!lessonChallenge || history.length === 0) return false;
@@ -730,6 +746,33 @@ export const App: React.FC = () => {
     startNewGame(lessonFen);
   }, [adaptivePrompt, startNewGame]);
 
+  const handleStartGame = useCallback((difficulty: AiDifficulty) => {
+    setSettings((current) => ({ ...current, mode: 'vs-ai', aiDifficulty: difficulty }));
+    setActiveView('game');
+    startNewGame();
+  }, [startNewGame]);
+
+  if (activeView === 'hub') {
+    return (
+      <LearningHub
+        onStartGame={handleStartGame}
+        onStartPuzzleRush={(rating) => {
+          setPuzzleRushRating(rating);
+          setActiveView('puzzles');
+        }}
+        onOpenLibrary={setActiveView}
+      />
+    );
+  }
+
+  if (activeView === 'puzzles') {
+    return <PuzzleRush startingRating={puzzleRushRating} onExit={() => setActiveView('hub')} />;
+  }
+
+  if (activeView === 'openings' || activeView === 'endgames') {
+    return <StudyLibrary library={activeView} onExit={() => setActiveView('hub')} />;
+  }
+
   return (
     <div className="min-h-screen bg-[#161512] text-neutral-200 flex flex-col font-['Plus_Jakarta_Sans',sans-serif]">
       {/* Top Navbar */}
@@ -751,6 +794,14 @@ export const App: React.FC = () => {
 
         {/* Current status info / AI thinking indicator */}
         <div className="flex items-center space-x-3">
+          <button
+            onClick={() => setActiveView('hub')}
+            className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold text-neutral-300 hover:bg-[#312e2b] hover:text-white"
+            title="Return to practice hub"
+          >
+            <House className="h-3.5 w-3.5" />
+            Hub
+          </button>
           {isAiThinking && (
             <div className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-[#81b64c]/10 border border-[#81b64c]/40 text-[#81b64c] text-xs font-semibold animate-pulse">
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -914,6 +965,7 @@ export const App: React.FC = () => {
 
           <StudyRoadmap
             activeTopicId={selectedKnowledgeTopicId}
+            completedTopicIds={completedStudyTopics}
             onSelectTopic={setSelectedKnowledgeTopicId}
           />
 
@@ -926,21 +978,23 @@ export const App: React.FC = () => {
             <div className="rounded-xl border border-[#312e2b] bg-[#21201d] p-3 space-y-3">
               <div className="flex items-center justify-between gap-2">
                 <div className="text-sm font-bold text-white">Current concept</div>
-                {nextStudyTopic && (
+                (
                   <button
                     onClick={handleAdvanceStudyTopic}
                     className="rounded-lg bg-[#81b64c] px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-white hover:bg-[#92c957]"
                   >
-                    Next topic
+                    {completedStudyTopics.includes(selectedKnowledgeTopicId)
+                      ? nextStudyTopic ? 'Next topic' : 'Completed'
+                      : nextStudyTopic ? 'Complete & next' : 'Complete topic'}
                   </button>
-                )}
+                )
               </div>
               <div className="text-base font-bold text-[#81b64c]">{currentKnowledgeTopic.title}</div>
               <p className="text-xs leading-relaxed text-neutral-300">{currentKnowledgeTopic.whyItMatters}</p>
             </div>
           )}
 
-          <StudyProgressCard completedTopics={completedStudyTopics} />
+          <StudyProgressCard completedTopics={completedStudyTopics} streakDays={studyStreakDays} />
 
           <TheoryTrainer
             lessons={theoryLessons}

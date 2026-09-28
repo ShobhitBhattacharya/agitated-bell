@@ -4,11 +4,13 @@ import { getStudyRoadmap, getKnowledgeTopicById } from '../utils/chessKnowledgeB
 
 interface StudyRoadmapProps {
   activeTopicId?: string | null;
+  completedTopicIds?: string[];
   onSelectTopic?: (id: string) => void;
 }
 
 export const StudyRoadmap: React.FC<StudyRoadmapProps> = ({
   activeTopicId,
+  completedTopicIds = [],
   onSelectTopic,
 }) => {
   const roadmap = getStudyRoadmap();
@@ -24,7 +26,7 @@ export const StudyRoadmap: React.FC<StudyRoadmapProps> = ({
       <div className="space-y-2">
         {roadmap.map((topic, index) => {
           const isActive = activeTopic?.id === topic.id;
-          const isCompleted = activeTopic ? roadmap.findIndex((item) => item.id === activeTopic.id) > index : false;
+          const isCompleted = completedTopicIds.includes(topic.id);
 
           return (
             <button
