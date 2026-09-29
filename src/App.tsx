@@ -22,6 +22,8 @@ import { evaluateBoard, getBestMove } from './utils/chessEngine';
 import { PIECE_VALUES } from './utils/evalTables';
 import {
   detectOpeningFromMoves,
+  detectOpeningWithVariations,
+  formatMoveSequence,
   detectMatePatternFromMoves,
   getTheoryLessonById,
   getTheoryLessonsByCategory,
@@ -31,7 +33,7 @@ import {
   getAdaptiveTrainerPrompt,
   TheoryLesson,
 } from './utils/studyTools';
-import { Bot, Swords, Sparkles, Loader2, Info, BookOpen, Target, House } from 'lucide-react';
+import { Bot, Swords, Sparkles, Loader2, Info, BookOpen, Target, House, GitBranch } from 'lucide-react';
 import { TheoryTrainer } from './components/TheoryTrainer';
 import { AdaptiveTrainer } from './components/AdaptiveTrainer';
 import { KnowledgeBasePanel } from './components/KnowledgeBasePanel';
@@ -114,6 +116,7 @@ export const App: React.FC = () => {
   const [selectedTheoryLessonId, setSelectedTheoryLessonId] = useState<string>('scholars-mate');
   const [selectedKnowledgeCategory, setSelectedKnowledgeCategory] = useState<KnowledgeCategory>('opening-principles');
   const [selectedKnowledgeTopicId, setSelectedKnowledgeTopicId] = useState<string>('develop-first');
+  const [selectedVariationId, setSelectedVariationId] = useState<string | null>(null);
   const [studyProgress, setStudyProgress] = useState(loadStudyProgress);
   const completedStudyTopics = studyProgress.completedTopicIds;
   const studyStreakDays = useMemo(() => getStudyStreakDays(studyProgress.activityDates), [studyProgress.activityDates]);
@@ -214,6 +217,7 @@ export const App: React.FC = () => {
       setIsGameOverModalOpen(false);
       setPromotionPending(null);
       setIsAiThinking(false);
+      setSelectedVariationId(null);
 
       // Determine human player color in vs-ai mode
       let actualPlayerColor: PieceColor = 'w';
@@ -693,6 +697,7 @@ export const App: React.FC = () => {
     const moveSequence = history.map((item) => item.san);
     return {
       opening: detectOpeningFromMoves(moveSequence),
+      openingWithVariations: detectOpeningWithVariations(moveSequence),
       matePattern: detectMatePatternFromMoves(moveSequence),
     };
   }, [history]);
@@ -917,24 +922,161 @@ export const App: React.FC = () => {
             </div>
 
             <div className="rounded-lg border border-[#312e2b] bg-[#1a1917] p-3">
-              <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-[#81b64c] mb-2">
-                <Target className="w-3.5 h-3.5" />
-                Opening
+              <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-[#81b64c] mb-2">
+                <div className="flex items-center gap-1.5">
+                  <Target className="w-3.5 h-3.5" />
+                  <span>Opening Theory</span>
+                </div>
+                {studyContext.openingWithVariations && (
+                  <span
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                      studyContext.openingWithVariations.playstyle === 'Aggressive / Tactical'
+                        ? 'bg-rose-500/10 text-rose-400 border-rose-500/30'
+                        : studyContext.openingWithVariations.playstyle === 'Solid / Defensive'
+                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                        : studyContext.openingWithVariations.playstyle === 'Positional / Strategic'
+                        ? 'bg-purple-500/10 text-purple-400 border-purple-500/30'
+                        : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30'
+                    }`}
+                  >
+                    {studyContext.openingWithVariations.playstyle === 'Aggressive / Tactical' && '⚔️'}
+                    {studyContext.openingWithVariations.playstyle === 'Solid / Defensive' && '🛡️'}
+                    {studyContext.openingWithVariations.playstyle === 'Positional / Strategic' && '♟️'}
+                    {studyContext.openingWithVariations.playstyle === 'Dynamic / Counterattacking' && '⚡'}
+                    <span>{studyContext.openingWithVariations.playstyle}</span>
+                  </span>
+                )}
               </div>
-              {studyContext.opening ? (
-                <>
-                  <div className="font-semibold text-white">{studyContext.opening.name}</div>
-                  <div className="text-[11px] text-neutral-400">ECO: {studyContext.opening.eco}</div>
-                  <p className="mt-2 text-xs text-neutral-300 leading-relaxed">{studyContext.opening.summary}</p>
-                  <ul className="mt-2 space-y-1 text-[11px] text-neutral-400">
-                    {studyContext.opening.keyIdeas.map((idea) => (
-                      <li key={idea}>• {idea}</li>
+
+              {studyContext.openingWithVariations ? (
+                <div className="space-y-2.5">
+                  <div>
+                    <div className="flex items-baseline justify-between gap-2">
+                      <div className="font-semibold text-white text-base">
+                        {studyContext.openingWithVariations.opening.name}
+                      </div>
+                      <span className="text-[11px] font-mono text-neutral-400">
+                        {studyContext.openingWithVariations.opening.eco}
+                      </span>
+                    </div>
+
+                    {studyContext.openingWithVariations.activeVariation && (
+                      <div className="mt-1 inline-flex items-center gap-1 rounded bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-300 border border-amber-500/40">
+                        <span>Active Line:</span>
+                        <span>{studyContext.openingWithVariations.activeVariation.name}</span>
+                      </div>
+                    )}
+
+                    <p className="mt-1.5 text-xs text-neutral-300 leading-relaxed">
+                      {studyContext.openingWithVariations.opening.summary}
+                    </p>
+                  </div>
+
+                  {/* Player Benefit ("What this opening does for you") */}
+                  <div className="rounded-md bg-[#242921] border border-[#3b4334] p-2.5">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-[#b2ca7c]">
+                      What this opening does for you
+                    </div>
+                    <p className="mt-1 text-xs text-[#dce2d4] leading-relaxed">
+                      {studyContext.openingWithVariations.playerBenefit}
+                    </p>
+                  </div>
+
+                  {/* Key Ideas */}
+                  <ul className="space-y-1 text-[11px] text-neutral-400">
+                    {studyContext.openingWithVariations.opening.keyIdeas.map((idea) => (
+                      <li key={idea} className="flex items-start gap-1.5">
+                        <span className="text-[#81b64c]">•</span>
+                        <span>{idea}</span>
+                      </li>
                     ))}
                   </ul>
-                </>
+
+                  {/* Recommended Best Line & Next Best Move */}
+                  <div className="rounded-md bg-[#141613] border border-[#2b3127] p-2.5 space-y-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
+                        Recommended Best Line ({studyContext.openingWithVariations.bestLine.length} plies)
+                      </span>
+                      {studyContext.openingWithVariations.nextBestMove && (
+                        <span className="inline-flex items-center gap-1 rounded bg-[#81b64c]/20 px-2 py-0.5 text-[10px] font-extrabold text-[#92c957] border border-[#81b64c]/40 animate-pulse">
+                          Next: {studyContext.openingWithVariations.nextBestMove}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xs font-mono font-medium text-neutral-200 tracking-wide leading-relaxed break-words">
+                      {formatMoveSequence(studyContext.openingWithVariations.bestLine)}
+                    </div>
+                  </div>
+
+                  {/* Candidate Variations inside the game */}
+                  {studyContext.openingWithVariations.candidateVariations.length > 0 && (
+                    <div className="border-t border-[#2d3229] pt-2 space-y-2">
+                      <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-neutral-400">
+                        <span className="flex items-center gap-1">
+                          <GitBranch className="w-3 h-3 text-[#81b64c]" />
+                          Variations ({studyContext.openingWithVariations.candidateVariations.length})
+                        </span>
+                        <span className="text-[9px] text-neutral-500">Tap to inspect</span>
+                      </div>
+
+                      <div className="flex flex-wrap gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedVariationId(null)}
+                          className={`px-2 py-1 rounded text-[11px] font-semibold transition ${
+                            selectedVariationId === null
+                              ? 'bg-[#81b64c] text-[#161815] font-bold shadow-sm'
+                              : 'bg-[#242921] text-neutral-300 hover:bg-[#2d342a]'
+                          }`}
+                        >
+                          Main Line
+                        </button>
+                        {studyContext.openingWithVariations.candidateVariations.map((v) => {
+                          const isActive = studyContext.openingWithVariations?.activeVariation?.id === v.id;
+                          const isSelected = selectedVariationId === v.id;
+                          return (
+                            <button
+                              key={v.id}
+                              type="button"
+                              onClick={() => setSelectedVariationId(v.id)}
+                              className={`px-2 py-1 rounded text-[11px] font-semibold transition flex items-center gap-1 ${
+                                isSelected
+                                  ? 'bg-[#81b64c] text-[#161815] font-bold shadow-sm'
+                                  : isActive
+                                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                                  : 'bg-[#242921] text-neutral-300 hover:bg-[#2d342a]'
+                              }`}
+                            >
+                              {isActive && <span className="text-[10px]">●</span>}
+                              {v.name}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {selectedVariationId && (() => {
+                        const v = studyContext.openingWithVariations?.candidateVariations.find((item) => item.id === selectedVariationId);
+                        if (!v) return null;
+                        return (
+                          <div className="rounded bg-[#1e231b] border border-[#343d2f] p-2 text-xs space-y-1 mt-1.5">
+                            <div className="flex items-center justify-between">
+                              <span className="font-bold text-white">{v.name} ({v.eco})</span>
+                              <span className="text-[10px] text-[#9db879] font-medium">{v.playstyle}</span>
+                            </div>
+                            <p className="text-[11px] text-neutral-300">{v.playerBenefit}</p>
+                            <div className="text-[11px] font-mono text-[#b2ca7c] bg-[#141712] p-1.5 rounded">
+                              {formatMoveSequence(v.moves)}
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
+                </div>
               ) : (
                 <p className="text-xs text-neutral-400">
-                  Play a few moves to detect an opening pattern and learn its strategic ideas.
+                  Play a few moves to detect an opening pattern, its tactical playstyle, best line, and variations.
                 </p>
               )}
             </div>

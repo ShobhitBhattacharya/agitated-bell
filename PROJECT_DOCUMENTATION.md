@@ -116,26 +116,34 @@ It features:
 - **2-Minute Puzzle Rush**:
   - Real-time tactical rush engine with dynamic countdown, score calculation, instant green/red board feedback, and automatic opponent responses.
   - Stratified 150-puzzle CC0 catalogue sourced from the official Lichess open database, supporting Beginner (<800: 33 puzzles), Intermediate (800–2200: 88 puzzles), and Master (2200+: 29 puzzles) pools.
-- **Opening Model-Line Trainer**:
-  - Repertoire drill board with selectable White or Black perspective, validating learner moves against 18 tournament-tested systems with automated book replies:
-    1. Italian Game (`C50-C59`)
-    2. Sicilian Defense (`B20-B99`)
-    3. Queen's Gambit (`D06-D69`)
-    4. King's Indian Defense (`E60-E99`)
-    5. Ruy Lopez (`C60-C99`)
-    6. French Defense (`C10-C14`)
-    7. Caro-Kann Defense (`B10-B19`)
-    8. Scandinavian Defense (`B01`)
-    9. English Opening (`A10-A39`)
-    10. London System (`D02`)
-    11. Nimzo-Indian Defense (`E20-E59`)
-    12. Vienna Game (`C25-C29`)
-    13. Scotch Game (`C45`)
-    14. King's Gambit (`C30-C39`)
-    15. Slav Defense (`D10-D19`)
-    16. Grünfeld Defense (`D80-D99`)
-    17. Dutch Defense (`A80-A99`)
-    18. Modern Benoni (`A60-A79`)
+- **Opening Model-Line Trainer, Variations & Playstyle Classification**:
+  - Repertoire drill board with selectable White or Black perspective, validating learner moves against 18 tournament-tested systems deepened to **10–16 plies** (5–8 full moves) with automated book replies and named variations:
+    1. Italian Game (`C50-C59` · Positional) · *Variations: Evans Gambit (⚔️), Two Knights Defense (⚡)*
+    2. Sicilian Defense (`B20-B99` · Dynamic) · *Variations: Dragon (⚔️), Alapin (♟️), Closed (♟️)*
+    3. Queen's Gambit (`D06-D69` · Positional) · *Variations: QGA (⚡), Tarrasch Defense (⚔️)*
+    4. King's Indian Defense (`E60-E99` · Aggressive) · *Variations: Sämisch Variation (♟️)*
+    5. Ruy Lopez (`C60-C99` · Positional) · *Variations: Berlin Defense (🛡️), Exchange Variation (♟️)*
+    6. French Defense (`C10-C14` · Solid) · *Variations: Advance Variation (♟️), Winawer Variation (⚔️)*
+    7. Caro-Kann Defense (`B10-B19` · Solid) · *Variations: Advance Variation (⚡), Panov-Botvinnik Attack (⚔️)*
+    8. Scandinavian Defense (`B01` · Dynamic) · *Variations: Modern 2... Nf6 (⚡)*
+    9. English Opening (`A10-A39` · Positional) · *Variations: Symmetrical English (🛡️)*
+    10. London System (`D02` · Solid) · *Variations: Jobava London System (⚔️)*
+    11. Nimzo-Indian Defense (`E20-E59` · Positional) · *Variations: Classical 4. Qc2 (♟️)*
+    12. Vienna Game (`C25-C29` · Aggressive) · *Variations: Vienna Gambit Accepted (⚔️)*
+    13. Scotch Game (`C45` · Aggressive) · *Variations: Mieses Variation (⚡)*
+    14. King's Gambit (`C30-C39` · Aggressive) · *Variations: Declined (♟️), Falkbeer Counter-Gambit (⚡)*
+    15. Slav Defense (`D10-D19` · Solid) · *Variations: Semi-Slav Defense (⚡)*
+    16. Grünfeld Defense (`D80-D99` · Dynamic) · *Variations: Russian System (♟️)*
+    17. Dutch Defense (`A80-A99` · Aggressive) · *Variations: Leningrad Dutch (⚡)*
+    18. Modern Benoni (`A60-A79` · Dynamic) · *Variations: Fianchetto Variation (♟️)*
+  - **4-Tier Playstyle Classification**: Every opening and branch variation is categorized into:
+    - ⚔️ `Aggressive / Tactical`: Direct attacks, gambits, and sacrificial piece play.
+    - 🛡️ `Solid / Defensive`: Enduring, resilient pawn structures minimizing tactical risks.
+    - ♟️ `Positional / Strategic`: Classical spatial control, harmonic piece maneuvers, and endgame advantages.
+    - ⚡ `Dynamic / Counterattacking`: Hypermodern piece pressure, asymmetrical imbalances, and sharp counterpunches.
+  - **Strategic Player Benefits**: Plain-English strategic summaries explaining exactly what each opening does for the player, helping users choose openings matching their natural gameplay style.
+  - **In-Game Theory Coach**: Real-time opening detection with playstyle badge, player benefit, recommended 10–16 ply best line with a live **Next Best Move** chip, and interactive **Candidate Variations** tabs.
+  - **Multi-Variation Study Drills**: Ability to toggle between Main Best Line and individual branch variations within the interactive drill board.
 - **Interactive Endgame Principle Drills**:
   - Dedicated interactive drills for 14 cornerstone endgame principles:
     1. *The Lucena Position* (Bridge-building technique to escort passed rooks/pawns).

@@ -440,6 +440,7 @@
 | **Sprint 6** | **Study Drills & Endgame Principles** | US-1001, US-1002, US-1003 | `StudyLibrary.tsx`, `StudyDrill.tsx`, `studyDrills.ts`, `studyDrills.test.ts` | **DONE** |
 | **Sprint 7** | **Curriculum & Puzzle Expansion** | US-801, US-902, US-1001, US-1003 | `chessKnowledgeBase.ts` (28 topics), `studyTools.ts` (12 openings), `studyDrills.ts` (9 endgames), `puzzleRush.ts` (100 puzzles) | **DONE** |
 | **Sprint 8** | **Deep Library Expansion** | US-902, US-1001, US-1002, US-1003 | `studyTools.ts` (18 openings), `studyDrills.ts` (14 endgames), `puzzleRush.ts` (150 puzzles, 72 endgame drills) | **DONE** |
+| **Sprint 9** | **Deep Lines, Variations & Playstyle Taxonomy** | US-1001, US-1004, US-1005 | `studyTools.ts` (18 deep 10-16 ply lines, 26+ variations, 4 playstyles), `App.tsx` (In-Game Coach), `StudyLibrary.tsx`, `StudyDrill.tsx` | **DONE** |
 
 ---
 

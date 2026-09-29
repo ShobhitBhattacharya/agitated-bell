@@ -1,13 +1,16 @@
-import React, { useState } from 'react';
-import { ArrowLeft, Check, RotateCcw, X } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { ArrowLeft, Check, RotateCcw, X, GitBranch, Sparkles } from 'lucide-react';
 import { Chess, Color, Square } from 'chess.js';
 import { ChessBoard } from './ChessBoard';
 import { PuzzleRushPuzzle } from '../utils/puzzleRush';
+import { OpeningVariation } from '../utils/studyTools';
 
-interface StudyDrillProps {
+export interface StudyDrillProps {
   title: string;
   kind: 'opening' | 'endgame';
   openingMoves?: string[];
+  variations?: OpeningVariation[];
+  initialVariationId?: string;
   initialFen?: string;
   puzzle?: PuzzleRushPuzzle;
   explanation?: string;
@@ -51,31 +54,50 @@ export const StudyDrill: React.FC<StudyDrillProps> = ({
   title,
   kind,
   openingMoves = [],
+  variations = [],
+  initialVariationId,
   initialFen,
   puzzle,
   explanation,
   onClose,
 }) => {
+  const [activeVariationId, setActiveVariationId] = useState<string | null>(initialVariationId ?? null);
+
+  const activeMoves = useMemo(() => {
+    if (kind === 'opening' && activeVariationId && variations.length > 0) {
+      const found = variations.find((v) => v.id === activeVariationId);
+      if (found) return found.moves;
+    }
+    return openingMoves;
+  }, [kind, activeVariationId, variations, openingMoves]);
+
+  const activeVariation = useMemo(() => {
+    if (!activeVariationId || variations.length === 0) return null;
+    return variations.find((v) => v.id === activeVariationId) ?? null;
+  }, [activeVariationId, variations]);
+
   const initialTurn: Color = initialFen
     ? (new Chess(initialFen).turn() as Color)
     : 'w';
   const [playerColor, setPlayerColor] = useState<Color>(initialTurn);
   const [position, setPosition] = useState<PositionState>(() =>
-    createPosition(kind, openingMoves, puzzle, initialFen, initialTurn)
+    createPosition(kind, activeMoves, puzzle, initialFen, initialTurn)
   );
   const [fen, setFen] = useState(position.chess.fen());
   const [lastMove, setLastMove] = useState<{ from: Square; to: Square } | null>(null);
   const [isSolved, setIsSolved] = useState(false);
   const [feedback, setFeedback] = useState(
     kind === 'opening'
-      ? 'Play the model moves for your side.'
+      ? activeVariation
+        ? `Play the ${activeVariation.name} moves as ${initialTurn === 'w' ? 'White' : 'Black'}.`
+        : `Play the best line moves for your side.`
       : initialFen
       ? 'Find the winning endgame technique.'
       : 'Find the best endgame move.'
   );
 
-  const reset = (color = playerColor) => {
-    const next = createPosition(kind, openingMoves, puzzle, initialFen, color);
+  const reset = (color = playerColor, movesToUse = activeMoves) => {
+    const next = createPosition(kind, movesToUse, puzzle, initialFen, color);
     setPlayerColor(color);
     setPosition(next);
     setFen(next.chess.fen());
@@ -83,17 +105,32 @@ export const StudyDrill: React.FC<StudyDrillProps> = ({
     setIsSolved(false);
     setFeedback(
       kind === 'opening'
-        ? `Play the model moves as ${color === 'w' ? 'White' : 'Black'}.`
+        ? `Play the theoretical moves as ${color === 'w' ? 'White' : 'Black'}.`
         : initialFen
         ? 'Find the winning endgame technique.'
         : 'Find the best endgame move.'
     );
   };
 
+  const handleSelectVariation = (varId: string | null) => {
+    setActiveVariationId(varId);
+    let targetMoves = openingMoves;
+    let varName = 'Main Best Line';
+    if (varId && variations.length > 0) {
+      const v = variations.find((item) => item.id === varId);
+      if (v) {
+        targetMoves = v.moves;
+        varName = v.name;
+      }
+    }
+    reset(playerColor, targetMoves);
+    setFeedback(`Switched to ${varName}. Play as ${playerColor === 'w' ? 'White' : 'Black'}.`);
+  };
+
   const handleMove = (from: Square, to: Square): boolean => {
     if (isSolved) return false;
-    const isSanMoves = openingMoves && openingMoves.length > 0;
-    const solution = isSanMoves ? openingMoves : puzzle?.solution ?? [];
+    const isSanMoves = activeMoves && activeMoves.length > 0;
+    const solution = isSanMoves ? activeMoves : puzzle?.solution ?? [];
     const expected = solution[position.moveIndex];
     if (!expected) return false;
 
@@ -147,7 +184,7 @@ export const StudyDrill: React.FC<StudyDrillProps> = ({
         setIsSolved(true);
         setFeedback(
           kind === 'opening'
-            ? 'Model line complete.'
+            ? `${activeVariation ? activeVariation.name : 'Model line'} complete (${solution.length} plies)!`
             : initialFen
             ? 'Endgame technique mastered!'
             : 'Correct. Endgame line solved.'
@@ -155,7 +192,7 @@ export const StudyDrill: React.FC<StudyDrillProps> = ({
       } else {
         setFeedback(
           kind === 'opening'
-            ? 'Good. Continue the model line.'
+            ? 'Good. Continue the theoretical line.'
             : initialFen
             ? 'Correct move. Continue the technique.'
             : 'Correct. Continue the forcing line.'
@@ -178,7 +215,7 @@ export const StudyDrill: React.FC<StudyDrillProps> = ({
 
   const content =
     explanation ||
-    (openingMoves.length > 0 ? openingMoves.join(' · ') : puzzle?.themes.join(' · '));
+    (activeMoves.length > 0 ? activeMoves.join(' · ') : puzzle?.themes.join(' · '));
 
   return (
     <div
@@ -198,46 +235,92 @@ export const StudyDrill: React.FC<StudyDrillProps> = ({
           <div className="text-right">
             <div className="text-[10px] font-bold uppercase tracking-wider text-[#b2ca7c]">
               {kind === 'opening'
-                ? 'Opening drill'
+                ? activeVariation
+                  ? `Variation Drill · ${activeVariation.eco}`
+                  : 'Opening Best Line Drill'
                 : initialFen
                 ? 'Endgame Principle Drill'
                 : `Endgame drill · ${puzzle?.rating ?? ''}`}
             </div>
-            <h2 className="text-sm font-bold text-white">{title}</h2>
+            <h2 className="text-sm font-bold text-white">
+              {title}
+              {activeVariation && ` : ${activeVariation.name}`}
+            </h2>
           </div>
         </header>
 
         <div className="grid gap-6 p-4 sm:p-6 lg:grid-cols-[minmax(0,620px)_1fr]">
           <section>
+            {/* Opening Variations and Side Selector */}
             {kind === 'opening' && (
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <span className="text-xs font-semibold uppercase tracking-wider text-[#aeb5a5]">
-                  Play as
-                </span>
-                <div
-                  className="inline-flex rounded-md border border-[#454c40] bg-[#222720] p-1"
-                  role="group"
-                  aria-label="Choose opening side"
-                >
-                  {(['w', 'b'] as const).map((color) => (
-                    <button
-                      key={color}
-                      onClick={() => reset(color)}
-                      aria-pressed={playerColor === color}
-                      className={`rounded px-3 py-1.5 text-xs font-bold ${
-                        playerColor === color
-                          ? 'bg-[#b2ca7c] text-[#20251b]'
-                          : 'text-[#b6bead] hover:text-white'
-                      }`}
-                    >
-                      {color === 'w' ? 'White' : 'Black'}
-                    </button>
-                  ))}
+              <div className="mb-3 space-y-2.5">
+                {variations.length > 0 && (
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#9db879]">
+                      <GitBranch className="h-3 w-3" />
+                      <span>Choose Variation / Line</span>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => handleSelectVariation(null)}
+                        className={`rounded px-2.5 py-1 text-xs font-semibold transition ${
+                          activeVariationId === null
+                            ? 'bg-[#b2ca7c] text-[#1b201a] font-bold shadow'
+                            : 'bg-[#222720] text-[#c6ccbf] border border-[#3b4334] hover:bg-[#2b3228]'
+                        }`}
+                      >
+                        Main Best Line ({openingMoves.length} plies)
+                      </button>
+                      {variations.map((v) => (
+                        <button
+                          key={v.id}
+                          type="button"
+                          onClick={() => handleSelectVariation(v.id)}
+                          className={`rounded px-2.5 py-1 text-xs font-semibold transition flex items-center gap-1 ${
+                            activeVariationId === v.id
+                              ? 'bg-[#b2ca7c] text-[#1b201a] font-bold shadow'
+                              : 'bg-[#222720] text-[#c6ccbf] border border-[#3b4334] hover:bg-[#2b3228]'
+                          }`}
+                        >
+                          <span>{v.name}</span>
+                          <span className="text-[10px] opacity-75">({v.moves.length}p)</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between gap-3 pt-1">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-[#aeb5a5]">
+                    Play as
+                  </span>
+                  <div
+                    className="inline-flex rounded-md border border-[#454c40] bg-[#222720] p-1"
+                    role="group"
+                    aria-label="Choose opening side"
+                  >
+                    {(['w', 'b'] as const).map((color) => (
+                      <button
+                        key={color}
+                        onClick={() => reset(color)}
+                        aria-pressed={playerColor === color}
+                        className={`rounded px-3 py-1.5 text-xs font-bold ${
+                          playerColor === color
+                            ? 'bg-[#b2ca7c] text-[#20251b]'
+                            : 'text-[#b6bead] hover:text-white'
+                        }`}
+                      >
+                        {color === 'w' ? 'White' : 'Black'}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
+
             <ChessBoard
-              key={`${kind}-${title}-${fen}-${playerColor}`}
+              key={`${kind}-${title}-${fen}-${playerColor}-${activeVariationId ?? 'main'}`}
               chess={position.chess}
               orientation={orientation}
               theme="chesscom"
@@ -261,12 +344,31 @@ export const StudyDrill: React.FC<StudyDrillProps> = ({
           </section>
 
           <aside className="space-y-4 lg:pt-8">
+            {activeVariation && (
+              <div className="rounded-md border border-[#373d35] bg-[#222720] p-4 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#b2ca7c]">
+                    Active Variation
+                  </span>
+                  <span className="rounded bg-neutral-800 px-1.5 py-0.5 text-[10px] font-semibold text-neutral-300">
+                    {activeVariation.playstyle}
+                  </span>
+                </div>
+                <div className="text-base font-bold text-white">{activeVariation.name}</div>
+                <div className="text-xs text-[#b2ca7c]">What this opening does for you:</div>
+                <p className="text-xs text-[#c6ccbf] leading-relaxed">
+                  {activeVariation.playerBenefit}
+                </p>
+              </div>
+            )}
+
             <div className="rounded-md border border-[#373d35] bg-[#222720] p-4">
               <div className="text-[10px] font-bold uppercase tracking-wider text-[#b2ca7c]">
-                {openingMoves.length > 0 ? 'Model line' : 'Themes'}
+                {activeMoves.length > 0 ? (activeVariation ? 'Variation Moves' : 'Model Best Line') : 'Themes'}
               </div>
-              <p className="mt-2 text-sm leading-6 text-[#e0e6d8]">{content}</p>
+              <p className="mt-2 text-xs font-mono leading-6 text-[#e0e6d8] break-words">{content}</p>
             </div>
+
             {kind === 'endgame' && puzzle?.sourceUrl && (
               <p className="text-xs text-[#8e9787]">
                 Lichess puzzle rating: {puzzle.rating} · CC0 ·{' '}
@@ -280,6 +382,7 @@ export const StudyDrill: React.FC<StudyDrillProps> = ({
                 </a>
               </p>
             )}
+
             <div className="flex gap-2">
               <button
                 onClick={() => reset()}

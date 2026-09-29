@@ -23,8 +23,30 @@ A high-performance modern web chess application and interactive learning platfor
 
 ### 2. 🎓 Interactive Learning Hub & Drills
 - **Curriculum Roadmap (28 Lessons)**: Structured topic breakdown across Opening Principles, Positional Ideas, Tactical Motifs, Endgame Mastery, and Checkmate Patterns with local streak and progress persistence.
-- **Opening Model-Line Trainer (18 Repertoires)**: Interactive drills with automated book replies:
-  - Italian Game, Sicilian Defense, Queen's Gambit, King's Indian Defense, Ruy Lopez, French Defense, Caro-Kann, Scandinavian, English Opening, London System, Nimzo-Indian, Vienna Game, Scotch Game, King's Gambit, Slav Defense, Grünfeld Defense, Dutch Defense, and Modern Benoni.
+- **Opening Repertoires, Deep Lines (10–16 Plies) & Playstyle Taxonomy**:
+  - 18 tournament-tested opening repertoires deepened to **10–16 plies** (5–8 full moves), establishing tournament/engine-tested "Best Lines" with automated book replies and named variations:
+    - *Italian Game* (Positional · Evans Gambit, Two Knights)
+    - *Sicilian Defense* (Dynamic · Dragon, Alapin, Closed)
+    - *Queen's Gambit* (Positional · Accepted, Tarrasch)
+    - *King's Indian Defense* (Aggressive · Sämisch)
+    - *Ruy Lopez* (Positional · Berlin Defense, Exchange)
+    - *French Defense* (Solid · Advance, Winawer)
+    - *Caro-Kann Defense* (Solid · Advance, Panov-Botvinnik)
+    - *Scandinavian Defense* (Dynamic · Modern 2... Nf6)
+    - *English Opening* (Positional · Symmetrical)
+    - *London System* (Solid · Jobava London)
+    - *Nimzo-Indian Defense* (Positional · Classical 4. Qc2)
+    - *Vienna Game* (Aggressive · Vienna Gambit Accepted)
+    - *Scotch Game* (Aggressive · Mieses Variation)
+    - *King's Gambit* (Aggressive · Declined, Falkbeer Counter-Gambit)
+    - *Slav Defense* (Solid · Semi-Slav)
+    - *Grünfeld Defense* (Dynamic · Russian System)
+    - *Dutch Defense* (Aggressive · Leningrad Dutch)
+    - *Modern Benoni* (Dynamic · Fianchetto)
+  - **4 Playstyle Archetypes**: ⚔️ *Aggressive / Tactical*, 🛡️ *Solid / Defensive*, ♟️ *Positional / Strategic*, and ⚡ *Dynamic / Counterattacking*.
+  - **Strategic Player Benefits**: "What this opening does for you" strategic summaries so players can select openings tailored to their personal gameplay style.
+  - **In-Game Theory Coach**: Real-time opening detection with playstyle badge, player benefit, recommended 10–16 ply best line with a live **Next Best Move** chip, and interactive **Candidate Variations** tabs.
+  - **Multi-Variation Study Drills**: Switch dynamically between Main Best Line and individual branch variations in interactive drills.
 - **Interactive Endgame Drills (14 Principle Lessons + 72 Rated Drills)**: Hands-on practice for essential endgame techniques:
   - *The Lucena Position*: Building a bridge with the rook to escort the pawn.
   - *The Philidor Defense*: Passive/active 3rd & 6th rank stand against advancing rooks.

@@ -14,10 +14,15 @@ The project is a React/Vite chess learning application. The original rules-compl
 The most recent completed development steps are:
 
 1. **Knowledge Base Curriculum Expansion**: 28 structured lessons across 5 core categories (`opening-principles`, `positional-ideas`, `tactics`, `endgame`, `checkmate-patterns`).
-2. **Opening Model-Line Expansion (18 Repertoires)**: Expanded opening repertoires to 18 tournament systems (Italian, Sicilian, Queen's Gambit, King's Indian, Ruy Lopez, French, Caro-Kann, Scandinavian, English, London System, Nimzo-Indian, Vienna Game, Scotch Game, King's Gambit, Slav Defense, Grünfeld Defense, Dutch Defense, Modern Benoni).
+2. **Opening Deep Lines (10–16 Plies), Variations & Playstyles**:
+   - Deepened all 18 opening repertoires to 10–16 plies (5–8 full moves), establishing tournament/engine-tested "Best Lines".
+   - Added named branch variations per opening (e.g. Sicilian Dragon, Alapin, Closed; Italian Evans Gambit, Two Knights; Ruy Lopez Berlin, Exchange; etc.).
+   - Established 4-tier Playstyle Classification (⚔️ Aggressive / Tactical, 🛡️ Solid / Defensive, ♟️ Positional / Strategic, ⚡ Dynamic / Counterattacking) and strategic "What this opening does for you" player benefits.
+   - Enhanced In-Game Theory Coach: displays opening name, ECO, playstyle badge, player benefit, recommended 10–16 ply best line with a live **Next Best Move** chip, active line indicator, and interactive candidate variation tabs.
+   - Upgraded Study Library with playstyle filter pills and Study Drill with multi-variation line switching.
 3. **Endgame Principle Lessons Expansion (14 Lessons)**: Expanded interactive theoretical lessons to 14 (adding Lucena, Philidor, K+Q Box Mate, K+R Box Mate, Queen vs Pawn on 7th, King Triangulation, Réti's Dual Threat, Distant Opposition, Rook vs Bishop Fortress, and Wrong-Colored Bishop & Rook Pawn).
 4. **Tactical Puzzle Catalogue Expansion (150 Puzzles + 72 Endgame Drills)**: Curated and verified 150 Lichess CC0 puzzles (473–3062 ELO) with 72 rated endgame positions, broadening beginner (<800: 33 puzzles) and master (2200+: 29 puzzles) pools.
-5. **Legality & Test Verification**: Automated 100% FIDE legality checks for every starting position, prelude, and solution move with `chess.js`; all 36 tests pass in Vitest across 7 test files.
+5. **Legality & Test Verification**: Automated 100% FIDE legality checks for every starting position, best line, and variation with `chess.js`; all 42 tests pass in Vitest across 7 test files.
 6. **Synchronized Project Artifacts**: Updated `README.md`, `PROJECT_DOCUMENTATION.md`, `MVP_PROJECT_TRACKER.md`, `CHESS_CONTENT_RESOURCES.md`, and `ANTIGRAVITY_HANDOFF.md`.
 
 Android/Play Store preparation was previously considered, but the user explicitly asked to skip Android release work. Do not start Android packaging unless the user asks again.
