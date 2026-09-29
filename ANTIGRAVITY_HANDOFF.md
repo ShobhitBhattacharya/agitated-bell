@@ -22,6 +22,18 @@ The most recent completed development steps are:
 
 Android/Play Store preparation was previously considered, but the user explicitly asked to skip Android release work. Do not start Android packaging unless the user asks again.
 
+## GitHub Status: Resolved & Verified
+
+As of latest verification:
+
+- Local branch: `master`
+- Local HEAD commit: `a680618` (`feat(learning): expand library to 150 puzzles, 18 openings, and 14 endgame principle lessons`)
+- Remote `origin/master`: `a680618`
+- Git push verified:
+  - `git ls-remote origin refs/heads/master` $\rightarrow$ `a680618b68ab093dafd6a54e899d1b1a05e54b20`
+  - `git rev-parse HEAD` $\rightarrow$ `a680618b68ab093dafd6a54e899d1b1a05e54b20`
+- Working tree is clean and synchronized.
+
 ## Run and Validate
 
 PowerShell on this machine sometimes blocks the `npm.ps1` wrapper. These Node invocations have worked reliably:
