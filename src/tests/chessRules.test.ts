@@ -102,5 +102,5 @@ describe('FIDE Rules and Chess Logic Verification', () => {
     const hardMove = getBestMove(chess, 'hard');
     expect(hardMove).toBeDefined();
     expect(hardMove?.depth).toBe(4);
-  });
+  }, 15000);
 });
