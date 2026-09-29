@@ -102,6 +102,24 @@ It features:
   - Vertical bar beside the board that dynamically shifts with positional advantage, mapped with a sigmoid curve from -1500 to +1500 centipawns, showing labels like `+1.8`, `-0.7`, or `+M` (mate).
   - Automatically reverses orientation when the board is flipped.
 
+### Interactive Learning Hub & Drills (Phase 2)
+- **Central Learning Hub**:
+  - Comprehensive learning portal with instant navigation to Casual AI, Timed Puzzle Rush, Opening Repertoires, and Endgame Training.
+  - Interactive Topic Roadmap tracking learner progress across Fundamentals, Opening Principles, Positional Strategy, Tactical Motifs, and Essential Endgames.
+- **Local Progress & Streak Persistence**:
+  - Browser-local storage (`chess-master-study-progress-v1` and `chess-master-puzzle-rush-progress-v1`) tracking completed curriculum topics, consecutive daily study streaks, lifetime puzzle solves, and high scores.
+- **2-Minute Puzzle Rush**:
+  - Real-time tactical rush engine with dynamic countdown, score calculation, instant green/red board feedback, and automatic opponent responses.
+  - Stratified 58-puzzle CC0 catalogue sourced from the official Lichess open database, supporting Beginner (<800), Intermediate (800–2200), and Master (2200+) pools.
+- **Opening Model-Line Trainer**:
+  - Repertoire drill board with selectable White or Black perspective, validating learner moves against master lines (Sicilian Defense, French Defense, Ruy Lopez, Queen's Gambit, King's Indian) with automated book replies.
+- **Interactive Endgame Principle Drills**:
+  - Dedicated interactive drills for four cornerstone endgame principles:
+    1. *Direct Opposition* (Key King maneuvers to control queuing squares).
+    2. *Square of the Pawn* (Rapid geometric calculation of pawn promotion).
+    3. *Rook Behind Passed Pawn* (Tarrasch rule deflection and cut-off).
+    4. *Pawn Breakthrough* (Sacrificial breakthroughs in 3 vs 3 pawn structures).
+
 ### Clocks & Time Management
 - Dual digital clocks supporting standard presets:
   - Bullet (1 min)
@@ -188,12 +206,15 @@ agitated-bell/
 ├── index.html                           # App entry HTML, fonts, and favicon
 ├── package.json                         # Dependencies, scripts, and tooling config
 ├── tsconfig.json                        # TypeScript configuration for React & WebWorker
-├── vite.config.ts                       # Vite bundler config with Tailwind & React plugins
+├── vite.config.ts                       # Vite bundler config (port 3000, React, Tailwind plugins)
 ├── PROJECT_DOCUMENTATION.md             # This document!
+├── MVP_PROJECT_TRACKER.md               # Agile breakdown (EPIC-001 & EPIC-002, User Stories, Tasks)
+├── CHESS_CONTENT_RESOURCES.md           # Dataset provenance (Lichess CC0, Public Domain texts)
+├── ANTIGRAVITY_HANDOFF.md               # Continuation guide, verified hashes, and roadmap tracking
 │
 ├── src/
 │   ├── main.tsx                         # React 19 root bootstrap
-│   ├── App.tsx                          # Master state coordinator, clocks, and turns
+│   ├── App.tsx                          # Master state coordinator, views (hub/game/drills), and persistence
 │   ├── index.css                        # Tailwind v4 import & custom board color themes
 │   │
 │   ├── types/
@@ -203,7 +224,12 @@ agitated-bell/
 │   │   ├── pieces.tsx                   # Scalable vector Staunton chess pieces (K, Q, R, B, N, P)
 │   │   ├── audio.ts                     # Web Audio API sound synthesis engine
 │   │   ├── evalTables.ts                # Piece-Square Tables (PST) for positional evaluation
-│   │   └── chessEngine.ts               # Minimax algorithm, Alpha-Beta pruning, and move ordering
+│   │   ├── chessEngine.ts               # Minimax algorithm, Alpha-Beta pruning, and move ordering
+│   │   ├── chessKnowledgeBase.ts        # Explanatory concepts, roadmap categories, and study topics
+│   │   ├── progressStorage.ts           # Browser-local versioned persistence for streaks and best scores
+│   │   ├── puzzleRush.ts                # Stratified 58-puzzle CC0 catalogue & rating pool generators
+│   │   ├── studyDrills.ts               # Endgame principle lessons (opposition, square, etc.) & rated drills
+│   │   └── studyTools.ts                # Opening repertoire lessons and model-line definitions
 │   │
 │   ├── workers/
 │   │   └── chessAi.worker.ts            # Dedicated Web Worker for background AI calculation
@@ -217,30 +243,61 @@ agitated-bell/
 │   │   ├── GameControls.tsx             # New Game, Undo, Redo, Flip, Draw, Resign, Sound
 │   │   ├── PromotionModal.tsx           # FIDE pawn promotion picker (Q, R, B, N)
 │   │   ├── GameOverModal.tsx            # Victory/Draw dialog with rule citations & confetti
-│   │   └── GameSettingsModal.tsx        # Settings: AI difficulty, themes, time presets, FEN loader
+│   │   ├── GameSettingsModal.tsx        # Settings: AI difficulty, themes, time presets, FEN loader
+│   │   ├── LearningHub.tsx              # Home learning portal & quick action cards
+│   │   ├── PuzzleRush.tsx               # 2-minute timed tactical rush with feedback
+│   │   ├── StudyLibrary.tsx             # Opening repertoire and endgame practice library
+│   │   ├── StudyDrill.tsx               # Reusable interactive board drill (openings & endgames)
+│   │   ├── StudyRoadmap.tsx             # Progress-aware curriculum roadmap
+│   │   └── StudyProgressCard.tsx        # Streak display and overall completion badge
 │   │
 │   └── tests/
-│       └── chessRules.test.ts           # Vitest suite covering checkmate, stalemate, castling, etc.
+│       ├── chessRules.test.ts           # Vitest suite covering checkmate, stalemate, castling, AI search
+│       ├── knowledgeBase.test.ts        # Curriculum categories, roadmap order, and topic metadata
+│       ├── progressStorage.test.ts      # LocalStorage serialization, streak calculation, recovery
+│       ├── puzzleRush.test.ts           # Legality of 58 CC0 puzzle source FENs, preludes, and solutions
+│       ├── studyDrills.test.ts          # Endgame principle drills (opposition, square, Tarrasch, etc.)
+│       ├── studyTools.test.ts           # Opening repertoire move legality and prompts
+│       └── theoryTrainer.test.ts        # Theory trainer interactive state machine
 ```
 
 ---
 
 ## 6. Testing & Quality Assurance
 
-Automated unit tests are housed in [`src/tests/chessRules.test.ts`](file:///c:/Users/shobh/Documents/antigravity/agitated-bell/src/tests/chessRules.test.ts) and run with **Vitest**.
+The codebase is fortified with an automated test suite containing **7 test files and 34 passing tests** executed with **Vitest**.
 
-### Key Test Cases Verified
-1. **Checkmate (Rule 1.2)**: Verified via Fool's Mate sequence (`f3 e5 g4 Qh4#`).
-2. **Stalemate (Rule 5.2.1)**: Known King vs Queen/King boundary stalemate position (`k7/2Q5/2K5/8/8/8/8/8 b - - 0 1`).
-3. **Insufficient Material (Rule 9.6)**: Tested King vs King and King + Knight vs King.
-4. **En Passant**: Tested 2-square pawn jump, en passant capture legality, and removal of captured pawn from the 5th rank.
-5. **Castling through Check**: Proves castling kingside is rejected if the transit square is attacked by an enemy piece.
-6. **Promotion**: Proves pawn reaching the 8th rank creates exactly 4 legal options (`q`, `r`, `b`, `n`).
-7. **AI Search Stability**: Verifies position evaluation and depth search across Beginner, Intermediate, and Advanced tiers.
+### Key Test Suites Verified
+1. **FIDE Rules & Engine Logic (`chessRules.test.ts`)**:
+   - Checkmate (Rule 1.2) via Fool's Mate sequence (`f3 e5 g4 Qh4#`).
+   - Stalemate (Rule 5.2.1) boundary stalemate position (`k7/2Q5/2K5/8/8/8/8/8 b - - 0 1`).
+   - Insufficient Material (Rule 9.6) for King vs King and King + Knight vs King.
+   - En Passant legality, timing window, and removal of captured pawn.
+   - Castling through check restriction.
+   - Promotion 4-piece mandatory choice (`q`, `r`, `b`, `n`).
+   - AI search stability and depth scaling across all difficulty presets.
+2. **Tactical Puzzle Integrity (`puzzleRush.test.ts`)**:
+   - Validates all 58 Lichess CC0 puzzles: `sourceFen` + `opponentMove` = `fen`.
+   - Ensures no starting position is already game over.
+   - Proves every single move in every solution line is legal under FIDE rules.
+   - Asserts rating pool depth: 25+ puzzles near 800, 15+ near 1400, 10+ near 2400.
+3. **Endgame Principle & Rated Drills (`studyDrills.test.ts`)**:
+   - Validates interactive drills for Direct Opposition, Square of the Pawn, Rook Behind Passed Pawn (Tarrasch), and Pawn Breakthrough.
+   - Ensures legal starting FENs and valid move sequences.
+4. **Opening Repertoires (`studyTools.test.ts` & `theoryTrainer.test.ts`)**:
+   - Validates all opening model lines (Sicilian, French, Ruy Lopez, Queen's Gambit, King's Indian) starting from the initial position.
+5. **Local Persistence & Streaks (`progressStorage.test.ts`)**:
+   - Verifies consecutive calendar-day streak computation, empty fallback on corrupted JSON, and idempotent puzzle best tracking.
+6. **Curriculum Knowledge Base (`knowledgeBase.test.ts`)**:
+   - Verifies all categories have valid titles, icons, and non-empty topic lists.
 
-To run the test suite at any time:
+### Running the Test Suite
 ```powershell
+# Standard wrapper:
 npm.cmd test
+
+# Direct Node execution:
+node ./node_modules/vitest/vitest.mjs run
 ```
 
 ---

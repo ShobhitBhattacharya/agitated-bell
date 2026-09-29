@@ -14,11 +14,13 @@ The project is a React/Vite chess learning application. The original rules-compl
 The most recent completed development steps are:
 
 1. Researched reusable chess learning content and documented provenance.
-2. Added a curated, tested 33-puzzle Lichess CC0 sample pack to Puzzle Rush.
-3. Added local persistence for concept completion, study-day streaks, total puzzle solves, and Puzzle Rush best scores.
-4. Added playable opening model-line drills and rated endgame position drills.
+2. Built interactive practice drill boards for the 4 core Endgame Principles in `StudyLibrary.tsx` and `StudyDrill.tsx` (Opposition, Square of the Pawn, Rook Behind Passed Pawn / Tarrasch Rule, and Pawn Breakthrough).
+3. Expanded the curated, tested Lichess CC0 sample pack to 58 puzzles in `src/utils/puzzleRush.ts`, enriching sparse rating bands (`<800` beginner mates and `>2200` master tactical combinations) with 100% verified legal positions and solution lines.
+4. Added local persistence for concept completion, study-day streaks, total puzzle solves, and Puzzle Rush best scores.
+5. Added playable opening model-line drills and rated endgame position drills.
+6. Synchronized repository documentation (`README.md`, `PROJECT_DOCUMENTATION.md`, `MVP_PROJECT_TRACKER.md`, `CHESS_CONTENT_RESOURCES.md`).
 
-Android/Play Store preparation was the next project step, but the user explicitly asked to skip Android release work. Do not start Android packaging unless the user asks again.
+Android/Play Store preparation was previously considered, but the user explicitly asked to skip Android release work. Do not start Android packaging unless the user asks again.
 
 ## GitHub Status: Resolved & Verified
 
@@ -48,10 +50,12 @@ The development server was previously run at `http://localhost:3000/` and `http:
 
 Latest completed checks before this handoff document was created:
 
-- Full test suite: 7 files passed, 33 tests passed.
-- TypeScript + production Vite build passed.
+- Full test suite: 7 files passed, 34 tests passed.
+- TypeScript (`tsc -b`) + production Vite build (`vite build`) passed with 0 errors.
+- Legality of all 58 Lichess CC0 tactical puzzles (preludes and full solution lines) tested and verified.
+- Legality of all 4 Endgame Principle interactive lessons and 5 Opening model lines tested and verified.
 - Browser checked that the learning hub loads, an AI opponent responds, Puzzle Rush advances after a correct move, the opening library opens, and a Black-side Sicilian model-line drill accepts `...c5` and replies `Nf3`.
-- Endgame drill modal launch was exercised. Full endgame line interaction still merits a thorough manual/browser test.
+- Endgame principle drill modals launch and track progress correctly.
 
 ## Product Features
 
@@ -144,12 +148,12 @@ CHESS_CONTENT_RESOURCES.md          Dataset/book provenance and licensing notes
 Continue in small sequential slices; the user asked to work step by step. Do not silently jump to Android publishing.
 
 1. **Android release preparation is explicitly skipped.** Leave it alone until requested.
-2. Expand study exercises: make dedicated opening repertoire exploration and substantive endgame lessons (opposition, key squares, square of the pawn, rook endgame principles). Validate all lines/positions with `chess.js` and original wording.
-3. The 33 puzzle sample is small and its rating bands are sparse. Enlarge with a deliberate filtered/stratified subset of Lichess CC0 records, retain all provenance, test prelude and solver line, and keep within-run no-repeat behavior.
-4. Persist best-rush data is stored by selected starting rating and total solved, but there is no all-time session log, difficulty progression, or cross-device sync.
-5. Study completion is a manually advanced learning checklist, not assessment-based mastery. Future quizzes/review should determine completion more meaningfully.
-6. AI ELO labels need calibration against test games/users before being treated as genuine ratings.
-7. Play Store work (Capacitor packaging, icon/store assets, privacy disclosures, closed test) is not part of current scope by user request.
+2. **Endgame Principle Lessons (COMPLETED)**: Added dedicated interactive practice drills for Direct Opposition, Square of the Pawn, Rook Behind Passed Pawn (Tarrasch rule), and Pawn Breakthrough with legal FENs and SAN lines in `StudyLibrary.tsx` and `StudyDrill.tsx`.
+3. **Stratified CC0 Puzzle Expansion (COMPLETED)**: Expanded dataset from 33 to 58 Lichess CC0 puzzles across Beginner (<800), Intermediate (800-2200), and Master (2200+) pools, ensuring high pool depths (25+ near 800, 15+ near 1400, 13+ near 2400) and 100% verified legal solutions.
+4. **Persist best-rush data**: Currently stored by selected starting rating and total solved; future enhancement could add an all-time session history graph or cross-device sync.
+5. **Study completion assessment**: Study completion can be augmented with quiz-based mastery tests in addition to checklist progression.
+6. **AI ELO labels**: AI ELO labels are approximate; future work can calibrate against standardized engine suites.
+7. **Play Store work**: Capacitor packaging, icon/store assets, and closed testing remain out of scope per user direction.
 
 ## Known Git Push Issue (Resolved)
 

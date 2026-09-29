@@ -1,7 +1,7 @@
 # Agile Project Methodology & MVP Tracker
 
 > **Project Hierarchy**: **EPIC (MVP)** $\rightarrow$ **Features** $\rightarrow$ **User Stories** $\rightarrow$ **Technical Tasks**
-> **Current Lifecycle State**: **MVP Phase 1 Delivered & Verified**
+> **Current Lifecycle State**: **MVP Phase 1 & Phase 2 Delivered & Verified (34 Passing Tests)**
 
 ---
 
@@ -43,6 +43,21 @@
  └── [FEAT-07] Game Customization & Position Loader
       ├── US-701: Board Theme Selection
       └── US-702: Custom FEN Position Setup
+
+[EPIC-002] Interactive Learning Platform, Puzzle Rush & Study Drills
+ │
+ ├── [FEAT-08] Central Learning Hub & Local Persistence
+ │    ├── US-801: Curriculum Roadmap & Category Navigation
+ │    └── US-802: Local Storage Progress, Completion & Study Streaks
+ │
+ ├── [FEAT-09] 2-Minute Tactical Puzzle Rush
+ │    ├── US-901: Timed Tactical Rush Engine with Auto-Defense
+ │    └── US-902: Stratified 58-Puzzle CC0 Dataset (473-3062 ELO)
+ │
+ └── [FEAT-10] Opening & Endgame Interactive Study Drills
+      ├── US-1001: Opening Model-Line Trainer with Perspective Selection
+      ├── US-1002: Rated Tactical Endgame Practice Drills
+      └── US-1003: Core Endgame Principle Interactive Drills (Opposition, Square, Tarrasch, Breakthrough)
 ```
 
 ---
@@ -288,6 +303,117 @@
 
 ---
 
+## 🎓 EPIC-002: Interactive Learning Platform, Puzzle Rush & Study Drills
+
+- **Objective**: Expand the tournament-grade chess application into an engaging, structured training hub featuring a 2-minute tactical Puzzle Rush, opening model-line drills, rated endgame positions, and interactive drills for essential endgame principles with local progress and streak tracking.
+- **Definition of Done (DoD)**:
+  1. 100% legal FIDE validation for all opening lines, endgame positions, and tactical puzzles via automated tests.
+  2. Local browser persistence for daily study streaks, completed topics, and per-rating puzzle rush high scores.
+  3. No-repeat puzzle rush session pool with instant feedback and forced opponent replies.
+  4. 0 errors in TypeScript type check and production bundle build.
+
+---
+
+### [FEAT-08] Central Learning Hub & Local Persistence
+
+#### 📖 US-801: Curriculum Roadmap & Category Navigation
+- **As a** chess learner,
+- **I want** to browse topics structured by category (Fundamentals, Openings, Strategy, Tactics, Endgames),
+- **So that** I have a clear learning progression.
+- **Acceptance Criteria**:
+  - [x] Home screen features a dedicated Learning Hub with quick-start cards.
+  - [x] Topic roadmap displaying difficulty level, read time, and category tags.
+  - [x] One-click navigation between hub, gameplay, drills, and puzzle rush.
+- **Tasks**:
+  - [x] **TASK-801.1**: Build [`src/components/LearningHub.tsx`](file:///c:/Users/shobh/Documents/antigravity/agitated-bell/src/components/LearningHub.tsx) and [`src/components/StudyRoadmap.tsx`](file:///c:/Users/shobh/Documents/antigravity/agitated-bell/src/components/StudyRoadmap.tsx).
+  - [x] **TASK-801.2**: Define curriculum content in [`src/utils/chessKnowledgeBase.ts`](file:///c:/Users/shobh/Documents/antigravity/agitated-bell/src/utils/chessKnowledgeBase.ts).
+
+#### 📖 US-802: Local Storage Progress, Completion & Study Streaks
+- **As a** regular user,
+- **I want** my study progress and daily streaks saved in my browser,
+- **So that** I can track my improvement over time without creating an account.
+- **Acceptance Criteria**:
+  - [x] Completed topics persisted to `chess-master-study-progress-v1`.
+  - [x] Study streak increments on consecutive local calendar days.
+  - [x] Lifetime puzzle solves and best rush scores saved to `chess-master-puzzle-rush-progress-v1`.
+  - [x] Graceful fallback to empty state on corrupt or unavailable storage.
+- **Tasks**:
+  - [x] **TASK-802.1**: Implement [`src/utils/progressStorage.ts`](file:///c:/Users/shobh/Documents/antigravity/agitated-bell/src/utils/progressStorage.ts) with versioned keys and streak algorithms.
+  - [x] **TASK-802.2**: Build [`src/components/StudyProgressCard.tsx`](file:///c:/Users/shobh/Documents/antigravity/agitated-bell/src/components/StudyProgressCard.tsx).
+  - [x] **TASK-802.3**: Automated test suite [`src/tests/progressStorage.test.ts`](file:///c:/Users/shobh/Documents/antigravity/agitated-bell/src/tests/progressStorage.test.ts).
+
+---
+
+### [FEAT-09] 2-Minute Tactical Puzzle Rush
+
+#### 📖 US-901: Timed Tactical Rush Engine with Auto-Defense
+- **As a** competitive player,
+- **I want** to play a 2-minute timed puzzle rush sprint against tactics matched to my rating,
+- **So that** I can sharpen my tactical speed and pattern recognition.
+- **Acceptance Criteria**:
+  - [x] 2-minute countdown timer with running score and streak indicators.
+  - [x] Instant visual board feedback on correct and incorrect moves.
+  - [x] Automatic playing of defensive opponent moves in multi-ply tactical combinations.
+  - [x] Pool is shuffled per run; no puzzle repeats within the same run.
+- **Tasks**:
+  - [x] **TASK-901.1**: Build [`src/components/PuzzleRush.tsx`](file:///c:/Users/shobh/Documents/antigravity/agitated-bell/src/components/PuzzleRush.tsx).
+  - [x] **TASK-901.2**: Implement rating pool selection (`getPuzzlePool`) in `puzzleRush.ts`.
+
+#### 📖 US-902: Stratified 58-Puzzle CC0 Dataset (473-3062 ELO)
+- **As a** user at any skill level (beginner, intermediate, master),
+- **I want** high-quality, authentic puzzles with verified solutions and source links,
+- **So that** I can learn genuine tactical themes without copyright or licensing ambiguity.
+- **Acceptance Criteria**:
+  - [x] 58 curated CC0 puzzles sourced from official Lichess open database export.
+  - [x] Rating pool stratified across Beginner (<800), Intermediate (800-2200), and Master (2200+) bands.
+  - [x] Every prelude move and every solution move verified with `chess.js`.
+  - [x] Provenance tags, themes, and source URLs preserved for every puzzle.
+- **Tasks**:
+  - [x] **TASK-902.1**: Curate and validate 58 CC0 puzzles in [`src/utils/puzzleRush.ts`](file:///c:/Users/shobh/Documents/antigravity/agitated-bell/src/utils/puzzleRush.ts).
+  - [x] **TASK-902.2**: Automated FIDE legality and rating pool depth tests in [`src/tests/puzzleRush.test.ts`](file:///c:/Users/shobh/Documents/antigravity/agitated-bell/src/tests/puzzleRush.test.ts).
+
+---
+
+### [FEAT-10] Opening & Endgame Interactive Study Drills
+
+#### 📖 US-1001: Opening Model-Line Trainer
+- **As a** student studying openings,
+- **I want** to practice key opening repertoires from either White or Black perspective,
+- **So that** I learn proper development and move orders.
+- **Acceptance Criteria**:
+  - [x] Interactive drill board supporting side selection (Play as White / Play as Black).
+  - [x] Validates player SAN moves against theoretical model lines (Sicilian, French, Ruy Lopez, Queen's Gambit, King's Indian).
+  - [x] Plays opponent book replies automatically with tactical guidance.
+- **Tasks**:
+  - [x] **TASK-1001.1**: Build [`src/components/StudyDrill.tsx`](file:///c:/Users/shobh/Documents/antigravity/agitated-bell/src/components/StudyDrill.tsx) and [`src/components/StudyLibrary.tsx`](file:///c:/Users/shobh/Documents/antigravity/agitated-bell/src/components/StudyLibrary.tsx).
+  - [x] **TASK-1001.2**: Define model lines and verify legality in [`src/utils/studyTools.ts`](file:///c:/Users/shobh/Documents/antigravity/agitated-bell/src/utils/studyTools.ts) and [`src/tests/studyTools.test.ts`](file:///c:/Users/shobh/Documents/antigravity/agitated-bell/src/tests/studyTools.test.ts).
+
+#### 📖 US-1002: Rated Tactical Endgame Practice Drills
+- **As a** player transitioning to endgames,
+- **I want** to practice real endgame tactical conversions with exact ratings and source links,
+- **So that** I learn how to convert advantages in simplified positions.
+- **Acceptance Criteria**:
+  - [x] Filter CC0 puzzles tagged `endgame` into launchable interactive drills.
+  - [x] Validates user move sequences with instant retry on mistakes.
+- **Tasks**:
+  - [x] **TASK-1002.1**: Implement `getEndgameDrills()` in [`src/utils/studyDrills.ts`](file:///c:/Users/shobh/Documents/antigravity/agitated-bell/src/utils/studyDrills.ts).
+  - [x] **TASK-1002.2**: Integration tests in [`src/tests/studyDrills.test.ts`](file:///c:/Users/shobh/Documents/antigravity/agitated-bell/src/tests/studyDrills.test.ts).
+
+#### 📖 US-1003: Core Endgame Principle Interactive Lessons
+- **As a** student seeking positional endgame mastery,
+- **I want** hands-on interactive drills for the four classical endgame principles (Opposition, Square of the Pawn, Tarrasch Rule, Pawn Breakthrough),
+- **So that** I understand theoretical King-and-Pawn and Rook endings beyond pure tactics.
+- **Acceptance Criteria**:
+  - [x] Interactive drills for Direct Opposition, Square of the Pawn, Rook Behind Passed Pawn, and Pawn Breakthrough.
+  - [x] Step-by-step move validation, explanations, and visual feedback on the board.
+  - [x] "Practice this drill" buttons embedded directly in Endgame Principle cards.
+- **Tasks**:
+  - [x] **TASK-1003.1**: Create `EndgamePrincipleLesson` interface and lessons in [`src/utils/studyDrills.ts`](file:///c:/Users/shobh/Documents/antigravity/agitated-bell/src/utils/studyDrills.ts).
+  - [x] **TASK-1003.2**: Update `StudyDrill.tsx` to handle initial FEN, custom explanations, and unified move validation.
+  - [x] **TASK-1003.3**: Automated tests verifying legal starting FENs and move sequences in [`src/tests/studyDrills.test.ts`](file:///c:/Users/shobh/Documents/antigravity/agitated-bell/src/tests/studyDrills.test.ts).
+
+---
+
 ## 📈 Agile Sprint Traceability Matrix
 
 | Sprint | Focus Area | User Stories Delivered | Output Artifacts | Status |
@@ -296,20 +422,20 @@
 | **Sprint 2** | **Board UI & Audio** | US-201, US-202, US-203, US-204 | `ChessBoard.tsx`, `pieces.tsx`, `audio.ts`, `index.css` | **DONE** |
 | **Sprint 3** | **AI & Evaluation** | US-301, US-302, US-303, US-401, US-402 | `chessEngine.ts`, `evalTables.ts`, `chessAi.worker.ts`, `EvaluationBar.tsx` | **DONE** |
 | **Sprint 4** | **Game Suite & Polish** | US-501, US-502, US-601, US-602, US-701, US-702 | `ChessClock.tsx`, `MoveHistory.tsx`, `GameControls.tsx`, `GameSettingsModal.tsx` | **DONE** |
+| **Sprint 5** | **Learning Hub & Puzzle Rush** | US-801, US-802, US-901, US-902 | `LearningHub.tsx`, `PuzzleRush.tsx`, `progressStorage.ts`, `puzzleRush.ts` | **DONE** |
+| **Sprint 6** | **Study Drills & Endgame Principles** | US-1001, US-1002, US-1003 | `StudyLibrary.tsx`, `StudyDrill.tsx`, `studyDrills.ts`, `studyDrills.test.ts` | **DONE** |
 
 ---
 
 ## 🔮 Future Backlog (Post-MVP Epics)
 
-- **EPIC-002: Online Multiplayer**
-  - WebSockets / WebRTC peer-to-peer room matchmaking.
-- **EPIC-003: Tactical Puzzle Trainer**
-  - Daily puzzles fetched from open Lichess puzzle database.
-- **EPIC-004: Opening Book Explorer**
-  - Visual opening name explorer (Sicilian, Ruy Lopez, Queen's Gambit, etc.).
-- **EPIC-005: Post-Game Accuracy Analysis**
-  - Move classifications (Brilliant, Great, Best, Inaccuracy, Mistake, Blunder).
+- **EPIC-003: Online Multiplayer**
+  - WebSockets / WebRTC peer-to-peer room matchmaking and clock synchronization.
+- **EPIC-004: Post-Game Accuracy & Engine Analysis**
+  - Full game review with move classifications (Brilliant, Great, Best, Inaccuracy, Mistake, Blunder) and centipawn loss graphs.
+- **EPIC-005: Advanced Repertoire Builder**
+  - Custom repertoire builder allowing users to save and practice their own PGN variation trees.
 
 ---
 
-*This document is the official Agile Trial & Methodology record for the Chess Master MVP.*
+*This document is the official Agile Trial & Methodology record for the Chess Master project.*
