@@ -33,7 +33,10 @@ describe('opening and endgame study drills', () => {
 
   it('provides interactive endgame principle lessons with valid FEN and legal lines', () => {
     const lessons = getEndgamePrincipleLessons();
-    expect(lessons.length).toBeGreaterThanOrEqual(4);
+    expect(lessons.length).toBe(9);
+    expect(lessons.some((l) => l.id === 'lucena-position')).toBe(true);
+    expect(lessons.some((l) => l.id === 'philidor-defense')).toBe(true);
+    expect(lessons.some((l) => l.id === 'king-queen-mate')).toBe(true);
 
     for (const lesson of lessons) {
       expect(lesson.title).toBeTruthy();

@@ -102,23 +102,47 @@ It features:
   - Vertical bar beside the board that dynamically shifts with positional advantage, mapped with a sigmoid curve from -1500 to +1500 centipawns, showing labels like `+1.8`, `-0.7`, or `+M` (mate).
   - Automatically reverses orientation when the board is flipped.
 
-### Interactive Learning Hub & Drills (Phase 2)
+### Interactive Learning Hub & Drills (Phase 2 & Content Expansion)
 - **Central Learning Hub**:
   - Comprehensive learning portal with instant navigation to Casual AI, Timed Puzzle Rush, Opening Repertoires, and Endgame Training.
-  - Interactive Topic Roadmap tracking learner progress across Fundamentals, Opening Principles, Positional Strategy, Tactical Motifs, and Essential Endgames.
+  - Interactive Topic Roadmap tracking learner progress across 28 structured lessons covering:
+    - *Opening Principles* (Center Control, Minor Piece Development, King Safety & Castling, Piece Tempo & Initiative).
+    - *Positional Ideas* (Space Advantage & Maneuvering, Outpost Squares, Open Files & Heavy Pieces, The Bishop Pair, Prophylaxis & Prevention).
+    - *Tactical Motifs* (Pins, Forks, Skewers, Discovered Attacks, Deflection & Decoy, Overloaded Defenders, Interference & Line Blocking, Zwischenzug / In-Between Moves).
+    - *Endgame Mastery* (King Opposition, Square of the Pawn, Rook Activity & Cut-off, Pawn Breakthrough, The Lucena Position, The Philidor Defense, King Activity & Centralization).
+    - *Checkmate Patterns* (Back Rank Mate, Smothered Mate, Anastasia's Mate, Arabian Mate, Boden's Mate).
 - **Local Progress & Streak Persistence**:
   - Browser-local storage (`chess-master-study-progress-v1` and `chess-master-puzzle-rush-progress-v1`) tracking completed curriculum topics, consecutive daily study streaks, lifetime puzzle solves, and high scores.
 - **2-Minute Puzzle Rush**:
   - Real-time tactical rush engine with dynamic countdown, score calculation, instant green/red board feedback, and automatic opponent responses.
-  - Stratified 58-puzzle CC0 catalogue sourced from the official Lichess open database, supporting Beginner (<800), Intermediate (800–2200), and Master (2200+) pools.
+  - Stratified 100-puzzle CC0 catalogue sourced from the official Lichess open database, supporting Beginner (<800), Intermediate (800–2200), and Master (2200+) pools.
 - **Opening Model-Line Trainer**:
-  - Repertoire drill board with selectable White or Black perspective, validating learner moves against master lines (Sicilian Defense, French Defense, Ruy Lopez, Queen's Gambit, King's Indian) with automated book replies.
+  - Repertoire drill board with selectable White or Black perspective, validating learner moves against 12 tournament-tested systems with automated book replies:
+    1. Italian Game (`C50-C59`)
+    2. Sicilian Defense (`B20-B99`)
+    3. Queen's Gambit (`D06-D69`)
+    4. King's Indian Defense (`E60-E99`)
+    5. Ruy Lopez (`C60-C99`)
+    6. French Defense (`C10-C14`)
+    7. Caro-Kann Defense (`B10-B19`)
+    8. Scandinavian Defense (`B01`)
+    9. English Opening (`A10-A39`)
+    10. London System (`D02`)
+    11. Nimzo-Indian Defense (`E20-E59`)
+    12. Vienna Game (`C25-C29`)
 - **Interactive Endgame Principle Drills**:
-  - Dedicated interactive drills for four cornerstone endgame principles:
-    1. *Direct Opposition* (Key King maneuvers to control queuing squares).
-    2. *Square of the Pawn* (Rapid geometric calculation of pawn promotion).
-    3. *Rook Behind Passed Pawn* (Tarrasch rule deflection and cut-off).
-    4. *Pawn Breakthrough* (Sacrificial breakthroughs in 3 vs 3 pawn structures).
+  - Dedicated interactive drills for 9 cornerstone endgame principles:
+    1. *The Lucena Position* (Bridge-building technique to escort passed rooks/pawns).
+    2. *The Philidor Defense* (Passive and active 3rd/6th rank barrier defense).
+    3. *Direct Opposition* (Key King maneuvers to control queuing squares).
+    4. *Square of the Pawn* (Rapid geometric calculation of pawn promotion).
+    5. *Rook Behind Passed Pawn* (Tarrasch rule deflection and cut-off).
+    6. *Pawn Breakthrough* (Sacrificial breakthroughs in 3 vs 3 pawn structures).
+    7. *King & Queen vs King Checkmate* (Systematic box contraction).
+    8. *King & Rook vs King Checkmate* (Barrier creation and rank cutoffs).
+    9. *Queen vs Pawn on 7th Rank* (Staircase pinning and king tempo).
+- **Rated Endgame Tactical Drills**:
+  - 47 rated endgame positions directly filterable in the Study Library for targeted endgame tactical practice.
 
 ### Clocks & Time Management
 - Dual digital clocks supporting standard presets:

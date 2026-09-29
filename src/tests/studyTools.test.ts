@@ -31,4 +31,18 @@ describe('study tools', () => {
     expect(result).toBeDefined();
     expect(result?.id).toBe('queens-gambit');
   });
+
+  it('detects Ruy Lopez, French Defense, and London System', () => {
+    const ruy = detectOpeningFromMoves(['e4', 'e5', 'Nf3', 'Nc6', 'Bb5']);
+    expect(ruy).toBeDefined();
+    expect(ruy?.id).toBe('ruy-lopez');
+
+    const french = detectOpeningFromMoves(['e4', 'e6', 'd4', 'd5']);
+    expect(french).toBeDefined();
+    expect(french?.id).toBe('french-defense');
+
+    const london = detectOpeningFromMoves(['d4', 'd5', 'Nf3', 'Nf6', 'Bf4']);
+    expect(london).toBeDefined();
+    expect(london?.id).toBe('london-system');
+  });
 });

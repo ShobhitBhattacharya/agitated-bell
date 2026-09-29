@@ -13,27 +13,14 @@ The project is a React/Vite chess learning application. The original rules-compl
 
 The most recent completed development steps are:
 
-1. Researched reusable chess learning content and documented provenance.
-2. Built interactive practice drill boards for the 4 core Endgame Principles in `StudyLibrary.tsx` and `StudyDrill.tsx` (Opposition, Square of the Pawn, Rook Behind Passed Pawn / Tarrasch Rule, and Pawn Breakthrough).
-3. Expanded the curated, tested Lichess CC0 sample pack to 58 puzzles in `src/utils/puzzleRush.ts`, enriching sparse rating bands (`<800` beginner mates and `>2200` master tactical combinations) with 100% verified legal positions and solution lines.
-4. Added local persistence for concept completion, study-day streaks, total puzzle solves, and Puzzle Rush best scores.
-5. Added playable opening model-line drills and rated endgame position drills.
-6. Synchronized repository documentation (`README.md`, `PROJECT_DOCUMENTATION.md`, `MVP_PROJECT_TRACKER.md`, `CHESS_CONTENT_RESOURCES.md`).
+1. **Knowledge Base Curriculum Expansion**: Doubled structured curriculum from 14 to 28 lessons across 5 core categories (`opening-principles`, `positional-ideas`, `tactics`, `endgame`, `checkmate-patterns`).
+2. **Opening Model-Line Expansion**: Expanded opening repertoires from 4 to 12 tournament-tested systems (Italian, Sicilian, Queen's Gambit, King's Indian, Ruy Lopez, French, Caro-Kann, Scandinavian, English, London System, Nimzo-Indian, Vienna Game).
+3. **Endgame Principle Lessons Expansion**: Expanded interactive theoretical lessons from 4 to 9 (adding Lucena Position, Philidor Defense, King & Queen Box Mate, King & Rook Box Mate, and Queen vs Pawn on 7th Rank).
+4. **Tactical Puzzle Catalogue Expansion**: Curated and verified 100 Lichess CC0 puzzles (473–3062 ELO) with 47 rated endgame positions, broadening beginner (<800: 23 puzzles) and master (2200+: 19 puzzles) pools.
+5. **Legality & Test Verification**: Automated 100% FIDE legality checks for every starting position, prelude, and solution move with `chess.js`; all 35 tests pass in Vitest.
+6. **Synchronized Project Artifacts**: Updated `README.md`, `PROJECT_DOCUMENTATION.md`, `MVP_PROJECT_TRACKER.md`, `CHESS_CONTENT_RESOURCES.md`, and `ANTIGRAVITY_HANDOFF.md`.
 
 Android/Play Store preparation was previously considered, but the user explicitly asked to skip Android release work. Do not start Android packaging unless the user asks again.
-
-## GitHub Status: Resolved & Verified
-
-As of latest verification:
-
-- Local branch: `master`
-- Local HEAD commit: `3f0fbfa` (`Expand chess learning hub and study drills`)
-- Remote `origin/master`: `3f0fbfa` (`Expand chess learning hub and study drills`)
-- Git push was executed and verified against both `git ls-remote` and the GitHub REST API:
-  - `git ls-remote origin refs/heads/master` $\rightarrow$ `3f0fbfaa93d4ca0feb788894702e7a832895a876`
-  - `git rev-parse HEAD` $\rightarrow$ `3f0fbfaa93d4ca0feb788894702e7a832895a876`
-  - `gh api repos/ShobhitBhattacharya/agitated-bell/commits/master --jq .sha` $\rightarrow$ `3f0fbfaa93d4ca0feb788894702e7a832895a876`
-- Working tree is clean (with `ANTIGRAVITY_HANDOFF.md` tracking).
 
 ## Run and Validate
 
@@ -48,14 +35,13 @@ node ./node_modules/vite/bin/vite.js build
 
 The development server was previously run at `http://localhost:3000/` and `http://127.0.0.1:3000/`. Check whether port 3000 is already occupied before starting another instance.
 
-Latest completed checks before this handoff document was created:
+Latest completed checks:
 
-- Full test suite: 7 files passed, 34 tests passed.
+- Full test suite: 7 files passed, 35 tests passed.
 - TypeScript (`tsc -b`) + production Vite build (`vite build`) passed with 0 errors.
-- Legality of all 58 Lichess CC0 tactical puzzles (preludes and full solution lines) tested and verified.
-- Legality of all 4 Endgame Principle interactive lessons and 5 Opening model lines tested and verified.
-- Browser checked that the learning hub loads, an AI opponent responds, Puzzle Rush advances after a correct move, the opening library opens, and a Black-side Sicilian model-line drill accepts `...c5` and replies `Nf3`.
-- Endgame principle drill modals launch and track progress correctly.
+- Legality of all 100 Lichess CC0 tactical puzzles (preludes and full solution lines) tested and verified.
+- Legality of all 9 Endgame Principle interactive lessons and 12 Opening model lines tested and verified.
+- Browser checked that the learning hub loads, an AI opponent responds, Puzzle Rush advances after a correct move, opening library drills function with auto-replies, and endgame drills load correctly.
 
 ## Product Features
 

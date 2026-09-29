@@ -28,9 +28,12 @@ describe('chess knowledge base', () => {
   it('returns the study roadmap in a sensible progression order', () => {
     const roadmap = getStudyRoadmap();
 
-    expect(roadmap.length).toBeGreaterThan(5);
+    expect(roadmap.length).toBe(28);
     expect(roadmap[0].id).toBe('develop-first');
     expect(roadmap[1].id).toBe('central-control');
+    expect(roadmap.some((t) => t.id === 'outpost-squares')).toBe(true);
+    expect(roadmap.some((t) => t.id === 'anastasia-mate')).toBe(true);
+    expect(roadmap.some((t) => t.id === 'king-activity')).toBe(true);
   });
 
   it('returns the next topic after the current one', () => {

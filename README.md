@@ -4,8 +4,10 @@ A high-performance modern web chess application and interactive learning platfor
 
 ![FIDE Rules Compliant](https://img.shields.io/badge/FIDE-100%25%20Rule%20Compliant-brightgreen)
 ![Chess.com Standards](https://img.shields.io/badge/UX-Chess.com%20Standard-success)
-![Tests](https://img.shields.io/badge/Vitest-34%20Passed-blue)
-![Puzzles](https://img.shields.io/badge/Lichess%20CC0-58%20Puzzles-yellow)
+![Tests](https://img.shields.io/badge/Vitest-35%20Passed-blue)
+![Puzzles](https://img.shields.io/badge/Lichess%20CC0-100%20Puzzles-yellow)
+![Openings](https://img.shields.io/badge/Openings-12%20Model%20Lines-informational)
+![Endgames](https://img.shields.io/badge/Endgames-9%20Principle%20Lessons-purple)
 ![Architecture](https://img.shields.io/badge/AI-Web%20Worker%20Minimax-orange)
 
 ---
@@ -20,17 +22,23 @@ A high-performance modern web chess application and interactive learning platfor
 - **Audio & Visuals**: Procedural zero-dependency Web Audio sound effects, move highlights, and custom board themes.
 
 ### 2. 🎓 Interactive Learning Hub & Drills
-- **Curriculum Roadmap**: Topic breakdown across Fundamentals, Openings, Strategy, Tactics, and Endgames with local streak and progress persistence.
-- **Opening Model-Line Trainer**: Repertoire training with selectable White/Black perspectives and automated book replies.
-- **Interactive Endgame Drills**: Hands-on practice for essential endgame principles:
-  - *Direct Opposition*: Key King maneuvers to escort passed pawns.
-  - *Square of the Pawn*: Rapid rule-of-the-square calculation without calculation fatigue.
-  - *Rook Behind Passed Pawn*: Tarrasch rule implementation and rook deflection.
-  - *Pawn Breakthrough*: Sacrificial breakthroughs in symmetrical pawn structures.
+- **Curriculum Roadmap (28 Lessons)**: Structured topic breakdown across Opening Principles, Positional Ideas, Tactical Motifs, Endgame Mastery, and Checkmate Patterns with local streak and progress persistence.
+- **Opening Model-Line Trainer (12 Repertoires)**: Interactive drills for Italian Game, Sicilian Defense, Queen's Gambit, King's Indian Defense, Ruy Lopez, French Defense, Caro-Kann, Scandinavian, English Opening, London System, Nimzo-Indian, and Vienna Game.
+- **Interactive Endgame Drills (9 Principle Lessons + 47 Rated Drills)**: Hands-on practice for essential endgame techniques:
+  - *The Lucena Position*: Building a bridge with the rook to escort the pawn.
+  - *The Philidor Defense*: Passive/active 3rd & 6th rank stand against advancing rooks.
+  - *Direct Opposition*: Key King maneuvers to outflank the defender.
+  - *Square of the Pawn*: Rapid calculation of pawn promotion boundaries.
+  - *Rook Behind Passed Pawn*: Tarrasch rule application and rook activity.
+  - *Pawn Breakthrough*: Sacrificial line breakthroughs in symmetrical structures.
+  - *King & Queen vs King Checkmate*: Systematic boxing and cornering technique.
+  - *King & Rook vs King Checkmate*: Cutting the ranks and file-by-file barrier construction.
+  - *Queen vs Pawn on 7th Rank*: Using checks and pinning to escort your king.
 
 ### 3. ⚡ Puzzle Rush Tactical Sprint
 - **2-Minute Timed Rush**: Real-time solving sprint with instant move feedback and automatic defensive responses.
-- **Stratified CC0 Puzzle Catalogue**: 58 curated, FIDE-legal puzzles from the official Lichess open database spanning ratings 473 through 3062 across Beginner (<800), Intermediate (800–2200), and Master (2200+) pools.
+- **Stratified CC0 Puzzle Catalogue**: 100 curated, FIDE-legal puzzles from the official Lichess open database spanning ratings 473 through 3062 across Beginner (<800), Intermediate (800–2200), and Master (2200+) pools.
+- **Endgame Tactical Drills**: 47 rated endgame positions directly filterable in the Study Library for targeted endgame tactical practice.
 - **Personal Best Tracking**: High scores and lifetime solve counters stored locally.
 
 ---
@@ -55,7 +63,7 @@ npm.cmd test
 # Or direct Node execution:
 node ./node_modules/vitest/vitest.mjs run
 ```
-*Current test suite: 7 test files, 34 automated unit & integration tests passing.*
+*Current test suite: 7 test files, 35 automated unit & integration tests passing.*
 
 ### 3. Type Checking & Production Build
 ```bash
