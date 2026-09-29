@@ -4,10 +4,10 @@ A high-performance modern web chess application and interactive learning platfor
 
 ![FIDE Rules Compliant](https://img.shields.io/badge/FIDE-100%25%20Rule%20Compliant-brightgreen)
 ![Chess.com Standards](https://img.shields.io/badge/UX-Chess.com%20Standard-success)
-![Tests](https://img.shields.io/badge/Vitest-35%20Passed-blue)
-![Puzzles](https://img.shields.io/badge/Lichess%20CC0-100%20Puzzles-yellow)
-![Openings](https://img.shields.io/badge/Openings-12%20Model%20Lines-informational)
-![Endgames](https://img.shields.io/badge/Endgames-9%20Principle%20Lessons-purple)
+![Tests](https://img.shields.io/badge/Vitest-36%20Passed-blue)
+![Puzzles](https://img.shields.io/badge/Lichess%20CC0-150%20Puzzles-yellow)
+![Openings](https://img.shields.io/badge/Openings-18%20Model%20Lines-informational)
+![Endgames](https://img.shields.io/badge/Endgames-14%20Principle%20Lessons-purple)
 ![Architecture](https://img.shields.io/badge/AI-Web%20Worker%20Minimax-orange)
 
 ---
@@ -23,22 +23,28 @@ A high-performance modern web chess application and interactive learning platfor
 
 ### 2. 🎓 Interactive Learning Hub & Drills
 - **Curriculum Roadmap (28 Lessons)**: Structured topic breakdown across Opening Principles, Positional Ideas, Tactical Motifs, Endgame Mastery, and Checkmate Patterns with local streak and progress persistence.
-- **Opening Model-Line Trainer (12 Repertoires)**: Interactive drills for Italian Game, Sicilian Defense, Queen's Gambit, King's Indian Defense, Ruy Lopez, French Defense, Caro-Kann, Scandinavian, English Opening, London System, Nimzo-Indian, and Vienna Game.
-- **Interactive Endgame Drills (9 Principle Lessons + 47 Rated Drills)**: Hands-on practice for essential endgame techniques:
+- **Opening Model-Line Trainer (18 Repertoires)**: Interactive drills with automated book replies:
+  - Italian Game, Sicilian Defense, Queen's Gambit, King's Indian Defense, Ruy Lopez, French Defense, Caro-Kann, Scandinavian, English Opening, London System, Nimzo-Indian, Vienna Game, Scotch Game, King's Gambit, Slav Defense, Grünfeld Defense, Dutch Defense, and Modern Benoni.
+- **Interactive Endgame Drills (14 Principle Lessons + 72 Rated Drills)**: Hands-on practice for essential endgame techniques:
   - *The Lucena Position*: Building a bridge with the rook to escort the pawn.
   - *The Philidor Defense*: Passive/active 3rd & 6th rank stand against advancing rooks.
   - *Direct Opposition*: Key King maneuvers to outflank the defender.
+  - *Distant Opposition*: Controlling squares across odd distances to establish direct opposition.
   - *Square of the Pawn*: Rapid calculation of pawn promotion boundaries.
   - *Rook Behind Passed Pawn*: Tarrasch rule application and rook activity.
   - *Pawn Breakthrough*: Sacrificial line breakthroughs in symmetrical structures.
   - *King & Queen vs King Checkmate*: Systematic boxing and cornering technique.
   - *King & Rook vs King Checkmate*: Cutting the ranks and file-by-file barrier construction.
   - *Queen vs Pawn on 7th Rank*: Using checks and pinning to escort your king.
+  - *King Triangulation*: Losing a tempo with the king to put the defender in zugzwang.
+  - *Réti's Dual Threat Endgame*: Simultaneous diagonal pursuit chasing pawns and supporting promotion.
+  - *Rook vs Bishop Fortress*: Holding the draw in the safe corner opposite to the bishop's color.
+  - *Wrong-Colored Bishop & Rook Pawn*: Defending the promotion corner against the unsupporting bishop.
 
 ### 3. ⚡ Puzzle Rush Tactical Sprint
 - **2-Minute Timed Rush**: Real-time solving sprint with instant move feedback and automatic defensive responses.
-- **Stratified CC0 Puzzle Catalogue**: 100 curated, FIDE-legal puzzles from the official Lichess open database spanning ratings 473 through 3062 across Beginner (<800), Intermediate (800–2200), and Master (2200+) pools.
-- **Endgame Tactical Drills**: 47 rated endgame positions directly filterable in the Study Library for targeted endgame tactical practice.
+- **Stratified CC0 Puzzle Catalogue**: 150 curated, FIDE-legal puzzles from the official Lichess open database spanning ratings 473 through 3062 across Beginner (<800: 33 puzzles), Intermediate (800–2200: 88 puzzles), and Master (2200+: 29 puzzles) pools.
+- **Endgame Tactical Drills**: 72 rated endgame positions directly filterable in the Study Library for targeted endgame tactical practice.
 - **Personal Best Tracking**: High scores and lifetime solve counters stored locally.
 
 ---
@@ -63,7 +69,7 @@ npm.cmd test
 # Or direct Node execution:
 node ./node_modules/vitest/vitest.mjs run
 ```
-*Current test suite: 7 test files, 35 automated unit & integration tests passing.*
+*Current test suite: 7 test files, 36 automated unit & integration tests passing.*
 
 ### 3. Type Checking & Production Build
 ```bash

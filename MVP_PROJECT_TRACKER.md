@@ -359,52 +359,52 @@
   - [x] **TASK-901.1**: Build [`src/components/PuzzleRush.tsx`](file:///c:/Users/shobh/Documents/antigravity/agitated-bell/src/components/PuzzleRush.tsx).
   - [x] **TASK-901.2**: Implement rating pool selection (`getPuzzlePool`) in `puzzleRush.ts`.
 
-#### 📖 US-902: Stratified 100-Puzzle CC0 Dataset (473-3062 ELO)
+#### 📖 US-902: Stratified 150-Puzzle CC0 Dataset (473-3062 ELO)
 - **As a** user at any skill level (beginner, intermediate, master),
 - **I want** high-quality, authentic puzzles with verified solutions and source links,
 - **So that** I can learn genuine tactical themes without copyright or licensing ambiguity.
 - **Acceptance Criteria**:
-  - [x] 100 curated CC0 puzzles sourced from official Lichess open database export.
-  - [x] Rating pool stratified across Beginner (<800), Intermediate (800-2200), and Master (2200+) bands.
+  - [x] 150 curated CC0 puzzles sourced from official Lichess open database export.
+  - [x] Rating pool stratified across Beginner (<800: 33), Intermediate (800-2200: 88), and Master (2200+: 29) bands.
   - [x] Every prelude move and every solution move verified with `chess.js`.
   - [x] Provenance tags, themes, and source URLs preserved for every puzzle.
 - **Tasks**:
-  - [x] **TASK-902.1**: Curate and validate 100 CC0 puzzles in [`src/utils/puzzleRush.ts`](file:///c:/Users/shobh/Documents/antigravity/agitated-bell/src/utils/puzzleRush.ts).
+  - [x] **TASK-902.1**: Curate and validate 150 CC0 puzzles in [`src/utils/puzzleRush.ts`](file:///c:/Users/shobh/Documents/antigravity/agitated-bell/src/utils/puzzleRush.ts).
   - [x] **TASK-902.2**: Automated FIDE legality and rating pool depth tests in [`src/tests/puzzleRush.test.ts`](file:///c:/Users/shobh/Documents/antigravity/agitated-bell/src/tests/puzzleRush.test.ts).
 
 ---
 
 ### [FEAT-10] Opening & Endgame Interactive Study Drills
 
-#### 📖 US-1001: Opening Model-Line Trainer (12 Repertoires)
+#### 📖 US-1001: Opening Model-Line Trainer (18 Repertoires)
 - **As a** student studying openings,
 - **I want** to practice key opening repertoires from either White or Black perspective,
 - **So that** I learn proper development and move orders.
 - **Acceptance Criteria**:
   - [x] Interactive drill board supporting side selection (Play as White / Play as Black).
-  - [x] Validates player SAN moves against 12 theoretical model lines (Italian, Sicilian, Queen's Gambit, King's Indian, Ruy Lopez, French, Caro-Kann, Scandinavian, English, London, Nimzo-Indian, Vienna).
+  - [x] Validates player SAN moves against 18 theoretical model lines (Italian, Sicilian, Queen's Gambit, King's Indian, Ruy Lopez, French, Caro-Kann, Scandinavian, English, London, Nimzo-Indian, Vienna, Scotch, King's Gambit, Slav, Grünfeld, Dutch, Modern Benoni).
   - [x] Plays opponent book replies automatically with tactical guidance.
 - **Tasks**:
   - [x] **TASK-1001.1**: Build [`src/components/StudyDrill.tsx`](file:///c:/Users/shobh/Documents/antigravity/agitated-bell/src/components/StudyDrill.tsx) and [`src/components/StudyLibrary.tsx`](file:///c:/Users/shobh/Documents/antigravity/agitated-bell/src/components/StudyLibrary.tsx).
   - [x] **TASK-1001.2**: Define model lines and verify legality in [`src/utils/studyTools.ts`](file:///c:/Users/shobh/Documents/antigravity/agitated-bell/src/utils/studyTools.ts) and [`src/tests/studyTools.test.ts`](file:///c:/Users/shobh/Documents/antigravity/agitated-bell/src/tests/studyTools.test.ts).
 
-#### 📖 US-1002: Rated Tactical Endgame Practice Drills (47 Positions)
+#### 📖 US-1002: Rated Tactical Endgame Practice Drills (72 Positions)
 - **As a** player transitioning to endgames,
 - **I want** to practice real endgame tactical conversions with exact ratings and source links,
 - **So that** I learn how to convert advantages in simplified positions.
 - **Acceptance Criteria**:
-  - [x] Filter CC0 puzzles tagged `endgame` into launchable interactive drills (expanded to 47 rated drills).
+  - [x] Filter CC0 puzzles tagged `endgame` into launchable interactive drills (expanded to 72 rated drills).
   - [x] Validates user move sequences with instant retry on mistakes.
 - **Tasks**:
   - [x] **TASK-1002.1**: Implement `getEndgameDrills()` in [`src/utils/studyDrills.ts`](file:///c:/Users/shobh/Documents/antigravity/agitated-bell/src/utils/studyDrills.ts).
   - [x] **TASK-1002.2**: Integration tests in [`src/tests/studyDrills.test.ts`](file:///c:/Users/shobh/Documents/antigravity/agitated-bell/src/tests/studyDrills.test.ts).
 
-#### 📖 US-1003: Core Endgame Principle Interactive Lessons (9 Lessons)
+#### 📖 US-1003: Core Endgame Principle Interactive Lessons (14 Lessons)
 - **As a** student seeking positional endgame mastery,
-- **I want** hands-on interactive drills for classical endgame principles (Opposition, Square of the Pawn, Tarrasch Rule, Pawn Breakthrough, Lucena, Philidor, K+Q Mate, K+R Mate, Queen vs Pawn on 7th),
+- **I want** hands-on interactive drills for classical endgame principles,
 - **So that** I understand theoretical King-and-Pawn, Rook, and Queen endings beyond pure tactics.
 - **Acceptance Criteria**:
-  - [x] Interactive drills for 9 foundational endgame techniques:
+  - [x] Interactive drills for 14 foundational endgame techniques:
     1. Direct Opposition
     2. Square of the Pawn
     3. Rook Behind Passed Pawn
@@ -414,10 +414,15 @@
     7. King and Queen vs King Checkmate
     8. King and Rook vs King Checkmate
     9. Queen vs Pawn on 7th Rank
+    10. King Triangulation
+    11. Réti's Dual Threat Endgame
+    12. Distant Opposition
+    13. Rook vs Bishop Fortress
+    14. Wrong-Colored Bishop & Rook Pawn
   - [x] Step-by-step move validation, explanations, and visual feedback on the board.
   - [x] "Practice this drill" buttons embedded directly in Endgame Principle cards.
 - **Tasks**:
-  - [x] **TASK-1003.1**: Create `EndgamePrincipleLesson` interface and 9 lessons in [`src/utils/studyDrills.ts`](file:///c:/Users/shobh/Documents/antigravity/agitated-bell/src/utils/studyDrills.ts).
+  - [x] **TASK-1003.1**: Create `EndgamePrincipleLesson` interface and 14 lessons in [`src/utils/studyDrills.ts`](file:///c:/Users/shobh/Documents/antigravity/agitated-bell/src/utils/studyDrills.ts).
   - [x] **TASK-1003.2**: Update `StudyDrill.tsx` to handle initial FEN, custom explanations, and unified move validation.
   - [x] **TASK-1003.3**: Automated tests verifying legal starting FENs and move sequences in [`src/tests/studyDrills.test.ts`](file:///c:/Users/shobh/Documents/antigravity/agitated-bell/src/tests/studyDrills.test.ts).
 
@@ -434,6 +439,7 @@
 | **Sprint 5** | **Learning Hub & Puzzle Rush** | US-801, US-802, US-901, US-902 | `LearningHub.tsx`, `PuzzleRush.tsx`, `progressStorage.ts`, `puzzleRush.ts` | **DONE** |
 | **Sprint 6** | **Study Drills & Endgame Principles** | US-1001, US-1002, US-1003 | `StudyLibrary.tsx`, `StudyDrill.tsx`, `studyDrills.ts`, `studyDrills.test.ts` | **DONE** |
 | **Sprint 7** | **Curriculum & Puzzle Expansion** | US-801, US-902, US-1001, US-1003 | `chessKnowledgeBase.ts` (28 topics), `studyTools.ts` (12 openings), `studyDrills.ts` (9 endgames), `puzzleRush.ts` (100 puzzles) | **DONE** |
+| **Sprint 8** | **Deep Library Expansion** | US-902, US-1001, US-1002, US-1003 | `studyTools.ts` (18 openings), `studyDrills.ts` (14 endgames), `puzzleRush.ts` (150 puzzles, 72 endgame drills) | **DONE** |
 
 ---
 

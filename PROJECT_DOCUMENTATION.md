@@ -115,9 +115,9 @@ It features:
   - Browser-local storage (`chess-master-study-progress-v1` and `chess-master-puzzle-rush-progress-v1`) tracking completed curriculum topics, consecutive daily study streaks, lifetime puzzle solves, and high scores.
 - **2-Minute Puzzle Rush**:
   - Real-time tactical rush engine with dynamic countdown, score calculation, instant green/red board feedback, and automatic opponent responses.
-  - Stratified 100-puzzle CC0 catalogue sourced from the official Lichess open database, supporting Beginner (<800), Intermediate (800–2200), and Master (2200+) pools.
+  - Stratified 150-puzzle CC0 catalogue sourced from the official Lichess open database, supporting Beginner (<800: 33 puzzles), Intermediate (800–2200: 88 puzzles), and Master (2200+: 29 puzzles) pools.
 - **Opening Model-Line Trainer**:
-  - Repertoire drill board with selectable White or Black perspective, validating learner moves against 12 tournament-tested systems with automated book replies:
+  - Repertoire drill board with selectable White or Black perspective, validating learner moves against 18 tournament-tested systems with automated book replies:
     1. Italian Game (`C50-C59`)
     2. Sicilian Defense (`B20-B99`)
     3. Queen's Gambit (`D06-D69`)
@@ -130,8 +130,14 @@ It features:
     10. London System (`D02`)
     11. Nimzo-Indian Defense (`E20-E59`)
     12. Vienna Game (`C25-C29`)
+    13. Scotch Game (`C45`)
+    14. King's Gambit (`C30-C39`)
+    15. Slav Defense (`D10-D19`)
+    16. Grünfeld Defense (`D80-D99`)
+    17. Dutch Defense (`A80-A99`)
+    18. Modern Benoni (`A60-A79`)
 - **Interactive Endgame Principle Drills**:
-  - Dedicated interactive drills for 9 cornerstone endgame principles:
+  - Dedicated interactive drills for 14 cornerstone endgame principles:
     1. *The Lucena Position* (Bridge-building technique to escort passed rooks/pawns).
     2. *The Philidor Defense* (Passive and active 3rd/6th rank barrier defense).
     3. *Direct Opposition* (Key King maneuvers to control queuing squares).
@@ -141,8 +147,13 @@ It features:
     7. *King & Queen vs King Checkmate* (Systematic box contraction).
     8. *King & Rook vs King Checkmate* (Barrier creation and rank cutoffs).
     9. *Queen vs Pawn on 7th Rank* (Staircase pinning and king tempo).
+    10. *King Triangulation* (Losing a tempo to force Zugzwang).
+    11. *Réti's Dual Threat Endgame* (Simultaneous diagonal king march).
+    12. *Distant Opposition* (Geometric distant file control converting to direct opposition).
+    13. *Rook vs Bishop Fortress* (The safe corner drawing technique).
+    14. *Wrong-Colored Bishop & Rook Pawn* (Corner stalemate defense).
 - **Rated Endgame Tactical Drills**:
-  - 47 rated endgame positions directly filterable in the Study Library for targeted endgame tactical practice.
+  - 72 rated endgame positions directly filterable in the Study Library for targeted endgame tactical practice.
 
 ### Clocks & Time Management
 - Dual digital clocks supporting standard presets:

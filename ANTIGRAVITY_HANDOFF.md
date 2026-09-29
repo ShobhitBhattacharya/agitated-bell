@@ -13,26 +13,14 @@ The project is a React/Vite chess learning application. The original rules-compl
 
 The most recent completed development steps are:
 
-1. **Knowledge Base Curriculum Expansion**: Doubled structured curriculum from 14 to 28 lessons across 5 core categories (`opening-principles`, `positional-ideas`, `tactics`, `endgame`, `checkmate-patterns`).
-2. **Opening Model-Line Expansion**: Expanded opening repertoires from 4 to 12 tournament-tested systems (Italian, Sicilian, Queen's Gambit, King's Indian, Ruy Lopez, French, Caro-Kann, Scandinavian, English, London System, Nimzo-Indian, Vienna Game).
-3. **Endgame Principle Lessons Expansion**: Expanded interactive theoretical lessons from 4 to 9 (adding Lucena Position, Philidor Defense, King & Queen Box Mate, King & Rook Box Mate, and Queen vs Pawn on 7th Rank).
-4. **Tactical Puzzle Catalogue Expansion**: Curated and verified 100 Lichess CC0 puzzles (473–3062 ELO) with 47 rated endgame positions, broadening beginner (<800: 23 puzzles) and master (2200+: 19 puzzles) pools.
-5. **Legality & Test Verification**: Automated 100% FIDE legality checks for every starting position, prelude, and solution move with `chess.js`; all 35 tests pass in Vitest.
+1. **Knowledge Base Curriculum Expansion**: 28 structured lessons across 5 core categories (`opening-principles`, `positional-ideas`, `tactics`, `endgame`, `checkmate-patterns`).
+2. **Opening Model-Line Expansion (18 Repertoires)**: Expanded opening repertoires to 18 tournament systems (Italian, Sicilian, Queen's Gambit, King's Indian, Ruy Lopez, French, Caro-Kann, Scandinavian, English, London System, Nimzo-Indian, Vienna Game, Scotch Game, King's Gambit, Slav Defense, Grünfeld Defense, Dutch Defense, Modern Benoni).
+3. **Endgame Principle Lessons Expansion (14 Lessons)**: Expanded interactive theoretical lessons to 14 (adding Lucena, Philidor, K+Q Box Mate, K+R Box Mate, Queen vs Pawn on 7th, King Triangulation, Réti's Dual Threat, Distant Opposition, Rook vs Bishop Fortress, and Wrong-Colored Bishop & Rook Pawn).
+4. **Tactical Puzzle Catalogue Expansion (150 Puzzles + 72 Endgame Drills)**: Curated and verified 150 Lichess CC0 puzzles (473–3062 ELO) with 72 rated endgame positions, broadening beginner (<800: 33 puzzles) and master (2200+: 29 puzzles) pools.
+5. **Legality & Test Verification**: Automated 100% FIDE legality checks for every starting position, prelude, and solution move with `chess.js`; all 36 tests pass in Vitest across 7 test files.
 6. **Synchronized Project Artifacts**: Updated `README.md`, `PROJECT_DOCUMENTATION.md`, `MVP_PROJECT_TRACKER.md`, `CHESS_CONTENT_RESOURCES.md`, and `ANTIGRAVITY_HANDOFF.md`.
 
 Android/Play Store preparation was previously considered, but the user explicitly asked to skip Android release work. Do not start Android packaging unless the user asks again.
-
-## GitHub Status: Resolved & Verified
-
-As of latest verification:
-
-- Local branch: `master`
-- Local HEAD commit: `4a3eb18` (`feat(learning): expand knowledge base (28 topics), openings (12), endgames (9), and puzzles (100)`)
-- Remote `origin/master`: `4a3eb18`
-- Git push verified:
-  - `git ls-remote origin refs/heads/master` $\rightarrow$ `4a3eb185113583665b2932946f7655e2978d5194`
-  - `git rev-parse HEAD` $\rightarrow$ `4a3eb185113583665b2932946f7655e2978d5194`
-- Working tree is clean and synchronized.
 
 ## Run and Validate
 
@@ -49,11 +37,11 @@ The development server was previously run at `http://localhost:3000/` and `http:
 
 Latest completed checks:
 
-- Full test suite: 7 files passed, 35 tests passed.
+- Full test suite: 7 files passed, 36 tests passed.
 - TypeScript (`tsc -b`) + production Vite build (`vite build`) passed with 0 errors.
-- Legality of all 100 Lichess CC0 tactical puzzles (preludes and full solution lines) tested and verified.
-- Legality of all 9 Endgame Principle interactive lessons and 12 Opening model lines tested and verified.
-- Browser checked that the learning hub loads, an AI opponent responds, Puzzle Rush advances after a correct move, opening library drills function with auto-replies, and endgame drills load correctly.
+- Legality of all 150 Lichess CC0 tactical puzzles (preludes and full solution lines) tested and verified.
+- Legality of all 14 Endgame Principle interactive lessons and 18 Opening model lines tested and verified.
+- Browser checked that the learning hub loads, opening library drills function with auto-replies across all 18 repertoires, and endgame drills load correctly.
 
 ## Product Features
 

@@ -137,6 +137,54 @@ const openingCatalog: StudyOpening[] = [
     keyIdeas: ['Flexible 2. Nc3 development', 'Vienna Gambit with f4', 'Kingside attacking chances'],
     sampleMoves: ['e4', 'e5', 'Nc3'],
   },
+  {
+    id: 'scotch-game',
+    name: 'Scotch Game',
+    eco: 'C45',
+    summary: 'Direct central confrontation on move 3 aiming to blow open the center and achieve rapid piece activity.',
+    keyIdeas: ['Early d4 central blast', 'Active minor piece development', 'Open center lines'],
+    sampleMoves: ['e4', 'e5', 'Nf3', 'Nc6', 'd4'],
+  },
+  {
+    id: 'kings-gambit',
+    name: "King's Gambit",
+    eco: 'C30-C39',
+    summary: 'Romantic, highly tactical opening offering White\'s f-pawn on move 2 to dismantle Black\'s center and seize the open f-file.',
+    keyIdeas: ['Sacrifice on f4', 'Open f-file for kingside attack', 'Fast Bc4 and d4 pawn center'],
+    sampleMoves: ['e4', 'e5', 'f4'],
+  },
+  {
+    id: 'slav-defense',
+    name: 'Slav Defense',
+    eco: 'D10-D19',
+    summary: 'Solid and enduring defense against the Queen\'s Gambit, bolstering d5 with ...c6 while preserving the c8-bishop\'s diagonal.',
+    keyIdeas: ['Rock-solid d5 reinforcement', 'Free light-squared bishop', 'Queenside counterplay'],
+    sampleMoves: ['d4', 'd5', 'c4', 'c6'],
+  },
+  {
+    id: 'grunfeld-defense',
+    name: 'Grünfeld Defense',
+    eco: 'D80-D99',
+    summary: 'Hypermodern counter-punch inviting White to build a giant pawn center, which Black immediately strikes with ...d5 and ...c5.',
+    keyIdeas: ['Inviting central expansion', 'Kingside fianchetto Bg7', 'Undermining with ...c5'],
+    sampleMoves: ['d4', 'Nf6', 'c4', 'g6', 'Nc3', 'd5'],
+  },
+  {
+    id: 'dutch-defense',
+    name: 'Dutch Defense',
+    eco: 'A80-A99',
+    summary: 'Aggressive asymmetrical response to 1. d4, staking an immediate claim on the e4 square with 1... f5.',
+    keyIdeas: ['Control of e4 from move 1', 'Kingside attacking chances with Stonewall or Leningrad', 'Asymmetrical struggle'],
+    sampleMoves: ['d4', 'f5'],
+  },
+  {
+    id: 'modern-benoni',
+    name: 'Modern Benoni',
+    eco: 'A60-A79',
+    summary: 'Dynamic fighting defense giving White a central space advantage in exchange for a queenside pawn majority and active piece counterplay.',
+    keyIdeas: ['Queenside pawn majority', 'Dark-squared bishop along a1-h8', 'Dynamic imbalances'],
+    sampleMoves: ['d4', 'Nf6', 'c4', 'c5'],
+  },
 ];
 
 const matePatternCatalog: StudyMatePattern[] = [
@@ -341,6 +389,78 @@ export const theoryLessons: TheoryLesson[] = [
     theme: 'Tactical gambit play',
     eco: 'C25-C29',
   },
+  {
+    id: 'scotch-game',
+    category: 'opening',
+    name: 'Scotch Game',
+    difficulty: 'Beginner',
+    summary: 'Direct central confrontation on move 3 that blows open the e- and d-files for rapid tactical play.',
+    objective: 'Strike in the center with 3. d4, exchange on d4, and develop active minor pieces rapidly.',
+    keyIdeas: ['Early d4 central blast', 'Active minor piece development', 'Open center lines'],
+    keyMoves: ['e4', 'e5', 'Nf3', 'Nc6', 'd4', 'exd4', 'Nxd4', 'Bc5', 'Be3', 'Qf6'],
+    theme: 'Open game tactics',
+    eco: 'C45',
+  },
+  {
+    id: 'kings-gambit',
+    category: 'opening',
+    name: "King's Gambit",
+    difficulty: 'Advanced',
+    summary: 'Romantic, highly tactical opening offering White\'s f-pawn on move 2 to dismantle Black\'s center.',
+    objective: 'Sacrifice the f-pawn to deflect Black\'s e5 pawn, seize the center with d4, and attack down the f-file.',
+    keyIdeas: ['Sacrifice on f4', 'Open f-file for kingside attack', 'Fast Bc4 and d4 pawn center'],
+    keyMoves: ['e4', 'e5', 'f4', 'exf4', 'Nf3', 'g5', 'Bc4', 'Bg7', 'O-O'],
+    theme: 'Romantic gambit attack',
+    eco: 'C30-C39',
+  },
+  {
+    id: 'slav-defense',
+    category: 'opening',
+    name: 'Slav Defense',
+    difficulty: 'Intermediate',
+    summary: 'Solid and enduring defense against the Queen\'s Gambit, bolstering d5 with ...c6 while preserving the c8-bishop.',
+    objective: 'Build a bulletproof pawn triangle on d5 and c6, develop the light-squared bishop outside the pawn chain.',
+    keyIdeas: ['Rock-solid d5 reinforcement', 'Free light-squared bishop', 'Queenside counterplay'],
+    keyMoves: ['d4', 'd5', 'c4', 'c6', 'Nf3', 'Nf6', 'Nc3', 'dxc4', 'a4', 'Bf5'],
+    theme: 'Classical solidity',
+    eco: 'D10-D19',
+  },
+  {
+    id: 'grunfeld-defense',
+    category: 'opening',
+    name: 'Grünfeld Defense',
+    difficulty: 'Advanced',
+    summary: 'Hypermodern counter-punch inviting White to build a giant pawn center, which Black immediately strikes.',
+    objective: 'Give up the center temporarily with ...d5 and ...Nxd5, then relentlessly attack White\'s center with ...c5 and ...Bg7.',
+    keyIdeas: ['Inviting central expansion', 'Kingside fianchetto Bg7', 'Undermining with ...c5'],
+    keyMoves: ['d4', 'Nf6', 'c4', 'g6', 'Nc3', 'd5', 'cxd5', 'Nxd5', 'e4', 'Nxc3', 'bxc3', 'Bg7'],
+    theme: 'Dynamic piece counterattack',
+    eco: 'D80-D99',
+  },
+  {
+    id: 'dutch-defense',
+    category: 'opening',
+    name: 'Dutch Defense',
+    difficulty: 'Intermediate',
+    summary: 'Aggressive asymmetrical response to 1. d4, staking an immediate claim on the e4 square with 1... f5.',
+    objective: 'Control e4 with the f-pawn and prepare a direct kingside attack with active piece maneuvering.',
+    keyIdeas: ['Control of e4 from move 1', 'Kingside attacking chances with Stonewall or Leningrad', 'Asymmetrical struggle'],
+    keyMoves: ['d4', 'f5', 'g3', 'Nf6', 'Bg2', 'e6', 'Nf3', 'd5', 'O-O', 'Bd6'],
+    theme: 'Asymmetrical flank fight',
+    eco: 'A80-A99',
+  },
+  {
+    id: 'modern-benoni',
+    category: 'opening',
+    name: 'Modern Benoni',
+    difficulty: 'Advanced',
+    summary: 'Dynamic fighting defense giving White a central space advantage in exchange for a queenside pawn majority.',
+    objective: 'Cede central space with 1... c5 and 2... e6 to unleash the dark-squared bishop along the long diagonal.',
+    keyIdeas: ['Queenside pawn majority', 'Dark-squared bishop along a1-h8', 'Dynamic imbalances'],
+    keyMoves: ['d4', 'Nf6', 'c4', 'c5', 'd5', 'e6', 'Nc3', 'exd5', 'cxd5', 'd6'],
+    theme: 'Sharp imbalance',
+    eco: 'A60-A79',
+  },
 ];
 
 const normalizeMove = (move: string) => move.trim().toLowerCase().replace(/\s+/g, ' ');
@@ -360,14 +480,17 @@ const matchSequence = (moveList: string[], pattern: string[]) => {
 
 export const detectOpeningFromMoves = (moves: string[]) => {
   const normalizedMoves = moves.map(normalizeMove);
+  let bestMatch: StudyOpening | null = null;
 
   for (const opening of openingCatalog) {
     if (matchSequence(normalizedMoves, opening.sampleMoves)) {
-      return opening;
+      if (!bestMatch || opening.sampleMoves.length > bestMatch.sampleMoves.length) {
+        bestMatch = opening;
+      }
     }
   }
 
-  return null;
+  return bestMatch;
 };
 
 export const detectMatePatternFromMoves = (moves: string[]) => {

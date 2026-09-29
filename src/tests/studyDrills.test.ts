@@ -15,7 +15,7 @@ describe('opening and endgame study drills', () => {
 
   it('provides rated endgame drills with source links and legal solution lines', () => {
     const drills = getEndgameDrills();
-    expect(drills.length).toBeGreaterThan(5);
+    expect(drills.length).toBeGreaterThanOrEqual(70);
 
     for (const puzzle of drills) {
       expect(puzzle.sourceUrl).toContain(puzzle.id);
@@ -33,10 +33,15 @@ describe('opening and endgame study drills', () => {
 
   it('provides interactive endgame principle lessons with valid FEN and legal lines', () => {
     const lessons = getEndgamePrincipleLessons();
-    expect(lessons.length).toBe(9);
+    expect(lessons.length).toBe(14);
     expect(lessons.some((l) => l.id === 'lucena-position')).toBe(true);
     expect(lessons.some((l) => l.id === 'philidor-defense')).toBe(true);
     expect(lessons.some((l) => l.id === 'king-queen-mate')).toBe(true);
+    expect(lessons.some((l) => l.id === 'triangulation')).toBe(true);
+    expect(lessons.some((l) => l.id === 'reti-endgame')).toBe(true);
+    expect(lessons.some((l) => l.id === 'distant-opposition')).toBe(true);
+    expect(lessons.some((l) => l.id === 'rook-vs-bishop')).toBe(true);
+    expect(lessons.some((l) => l.id === 'wrong-bishop-rook-pawn')).toBe(true);
 
     for (const lesson of lessons) {
       expect(lesson.title).toBeTruthy();

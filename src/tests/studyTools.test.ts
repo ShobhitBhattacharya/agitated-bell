@@ -45,4 +45,24 @@ describe('study tools', () => {
     expect(london).toBeDefined();
     expect(london?.id).toBe('london-system');
   });
+
+  it('detects newly added openings: Scotch, King\'s Gambit, Slav, Grünfeld, Dutch, Benoni', () => {
+    const scotch = detectOpeningFromMoves(['e4', 'e5', 'Nf3', 'Nc6', 'd4']);
+    expect(scotch?.id).toBe('scotch-game');
+
+    const kingsGambit = detectOpeningFromMoves(['e4', 'e5', 'f4']);
+    expect(kingsGambit?.id).toBe('kings-gambit');
+
+    const slav = detectOpeningFromMoves(['d4', 'd5', 'c4', 'c6']);
+    expect(slav?.id).toBe('slav-defense');
+
+    const grunfeld = detectOpeningFromMoves(['d4', 'Nf6', 'c4', 'g6', 'Nc3', 'd5']);
+    expect(grunfeld?.id).toBe('grunfeld-defense');
+
+    const dutch = detectOpeningFromMoves(['d4', 'f5']);
+    expect(dutch?.id).toBe('dutch-defense');
+
+    const benoni = detectOpeningFromMoves(['d4', 'Nf6', 'c4', 'c5']);
+    expect(benoni?.id).toBe('modern-benoni');
+  });
 });

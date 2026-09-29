@@ -31,15 +31,15 @@ describe('Puzzle Rush catalogue', () => {
   });
 
   it('provides varied puzzles near each starting rating and across skill bands', () => {
-    expect(puzzleRushPuzzles.length).toBe(100);
-    expect(getPuzzlePool(800).length).toBeGreaterThanOrEqual(35);
-    expect(getPuzzlePool(1400).length).toBeGreaterThanOrEqual(25);
-    expect(getPuzzlePool(2400).length).toBeGreaterThanOrEqual(15);
+    expect(puzzleRushPuzzles.length).toBe(150);
+    expect(getPuzzlePool(800).length).toBeGreaterThanOrEqual(50);
+    expect(getPuzzlePool(1400).length).toBeGreaterThanOrEqual(40);
+    expect(getPuzzlePool(2400).length).toBeGreaterThanOrEqual(25);
     expect(getPuzzlePool(800).every((puzzle) => puzzle.rating < 1200)).toBe(true);
 
     const beginnerCount = puzzleRushPuzzles.filter((p) => p.rating < 800).length;
     const masterCount = puzzleRushPuzzles.filter((p) => p.rating >= 2200).length;
-    expect(beginnerCount).toBeGreaterThanOrEqual(20);
-    expect(masterCount).toBeGreaterThanOrEqual(15);
+    expect(beginnerCount).toBeGreaterThanOrEqual(30);
+    expect(masterCount).toBeGreaterThanOrEqual(25);
   });
 });
