@@ -33,7 +33,7 @@ import {
   getAdaptiveTrainerPrompt,
   TheoryLesson,
 } from './utils/studyTools';
-import { Bot, Swords, Sparkles, Loader2, Info, BookOpen, Target, House, GitBranch } from 'lucide-react';
+import { Bot, Swords, Sparkles, Loader2, Info, BookOpen, Target, House, GitBranch, History, Compass, Shield, ShieldAlert } from 'lucide-react';
 import { TheoryTrainer } from './components/TheoryTrainer';
 import { AdaptiveTrainer } from './components/AdaptiveTrainer';
 import { KnowledgeBasePanel } from './components/KnowledgeBasePanel';
@@ -42,6 +42,19 @@ import { StudyProgressCard } from './components/StudyProgressCard';
 import { LearningHub } from './components/LearningHub';
 import { PuzzleRush } from './components/PuzzleRush';
 import { StudyLibrary } from './components/StudyLibrary';
+import { GameReviewModal } from './components/GameReviewModal';
+import { GameArchiveModal } from './components/GameArchiveModal';
+import { AnalysisBoard } from './components/AnalysisBoard';
+import { BotSelectorModal } from './components/BotSelectorModal';
+import { BotBanterBubble } from './components/BotBanterBubble';
+import { CoordinateTrainer } from './components/CoordinateTrainer';
+import { SocialShareModal } from './components/SocialShareModal';
+import {
+  BotPersonalityId,
+  getBotById,
+  getRandomBanter,
+} from './utils/botPersonalities';
+import { saveGameToArchive, ArchivedGame } from './utils/gameArchive';
 import {
   KnowledgeCategory,
   getKnowledgeTopicById,
@@ -121,8 +134,41 @@ export const App: React.FC = () => {
   const completedStudyTopics = studyProgress.completedTopicIds;
   const studyStreakDays = useMemo(() => getStudyStreakDays(studyProgress.activityDates), [studyProgress.activityDates]);
   const [lessonChallenge, setLessonChallenge] = useState<{ lessonId: string; targetMove: string } | null>(null);
-  const [activeView, setActiveView] = useState<'hub' | 'game' | 'puzzles' | 'openings' | 'endgames'>('hub');
+  const [activeView, setActiveView] = useState<'hub' | 'game' | 'puzzles' | 'openings' | 'endgames' | 'analysis' | 'vision'>('hub');
   const [puzzleRushRating, setPuzzleRushRating] = useState(800);
+  const [analysisParams, setAnalysisParams] = useState<{ moves?: string[]; fen?: string; pgn?: string } | null>(null);
+
+  // Bot Personalities & Banter State
+  const [selectedBotId, setSelectedBotId] = useState<BotPersonalityId>('elena');
+  const [isBotSelectorOpen, setIsBotSelectorOpen] = useState<boolean>(false);
+  const [botBanterMessage, setBotBanterMessage] = useState<string | null>(null);
+
+  // Social Share Card State
+  const [isSocialShareOpen, setIsSocialShareOpen] = useState<boolean>(false);
+
+  // Blunder Shield State
+  const [blunderWarning, setBlunderWarning] = useState<{
+    from: Square;
+    to: Square;
+    promotion?: PieceType;
+    message: string;
+  } | null>(null);
+  const blunderOverrideRef = useRef<boolean>(false);
+
+  const handleOpenAnalysis = useCallback((moves?: string[], fen?: string, pgn?: string) => {
+    setAnalysisParams({ moves, fen, pgn });
+    setActiveView('analysis');
+  }, []);
+
+  // Game Review & Archive State
+  const [isGameReviewOpen, setIsGameReviewOpen] = useState<boolean>(false);
+  const [isGameArchiveOpen, setIsGameArchiveOpen] = useState<boolean>(false);
+  const [reviewMoves, setReviewMoves] = useState<string[]>([]);
+  const [reviewWhiteName, setReviewWhiteName] = useState<string>('White');
+  const [reviewBlackName, setReviewBlackName] = useState<string>('Black');
+  const [reviewResult, setReviewResult] = useState<string>('*');
+  const [reviewPlayerColor, setReviewPlayerColor] = useState<PieceColor>('w');
+  const hasArchivedGameRef = useRef<boolean>(false);
 
   useEffect(() => {
     saveStudyProgress(studyProgress);
@@ -202,9 +248,89 @@ export const App: React.FC = () => {
     []
   );
 
+  const getPlayerDetails = useCallback(
+    (color: PieceColor) => {
+      if (settings.mode === 'vs-ai') {
+        if (color === playerColor) {
+          return { name: 'You', title: undefined, rating: '1500' };
+        }
+        const bot = getBotById(selectedBotId);
+        return {
+          name: bot.name,
+          title: bot.title,
+          rating: `${bot.rating}`,
+        };
+      }
+      return {
+        name: color === 'w' ? 'White' : 'Black',
+        title: undefined,
+        rating: undefined,
+      };
+    },
+    [settings.mode, playerColor, selectedBotId]
+  );
+
+  const archiveGame = useCallback(
+    (term: GameTermination, win: PieceColor | null, movesList: MoveHistoryItem[] = history) => {
+      if (hasArchivedGameRef.current || movesList.length === 0) return;
+      hasArchivedGameRef.current = true;
+
+      const movesSan = movesList.map((m) => m.san);
+      const opening = detectOpeningWithVariations(movesSan);
+      const whiteDetails = getPlayerDetails('w');
+      const blackDetails = getPlayerDetails('b');
+
+      let result: '1-0' | '0-1' | '1/2-1/2' = '1/2-1/2';
+      if (win === 'w') result = '1-0';
+      else if (win === 'b') result = '0-1';
+
+      saveGameToArchive({
+        whiteName: whiteDetails.name,
+        blackName: blackDetails.name,
+        playerColor,
+        mode: settings.mode,
+        result,
+        termination: term,
+        movesCount: movesSan.length,
+        openingName: opening ? `${opening.opening.name}${opening.activeVariation ? ' - ' + opening.activeVariation.name : ''}` : undefined,
+        openingEco: opening?.opening.eco,
+        pgn: chess.pgn(),
+        moves: movesSan,
+      });
+    },
+    [history, chess, getPlayerDetails, playerColor, settings.mode]
+  );
+
+  const handleOpenCurrentReview = useCallback(() => {
+    setIsGameOverModalOpen(false);
+    const movesSan = history.map((h) => h.san);
+    let res = '*';
+    if (winner === 'w') res = '1-0';
+    else if (winner === 'b') res = '0-1';
+    else if (termination !== 'in_progress') res = '1/2-1/2';
+
+    setReviewMoves(movesSan);
+    setReviewWhiteName(getPlayerDetails('w').name);
+    setReviewBlackName(getPlayerDetails('b').name);
+    setReviewResult(res);
+    setReviewPlayerColor(playerColor);
+    setIsGameReviewOpen(true);
+  }, [history, winner, termination, getPlayerDetails, playerColor]);
+
+  const handleOpenArchivedReview = useCallback((game: ArchivedGame) => {
+    setIsGameArchiveOpen(false);
+    setReviewMoves(game.moves);
+    setReviewWhiteName(game.whiteName);
+    setReviewBlackName(game.blackName);
+    setReviewResult(game.result);
+    setReviewPlayerColor(game.playerColor);
+    setIsGameReviewOpen(true);
+  }, []);
+
   // Reset / Start New Game
   const startNewGame = useCallback(
     (customFen?: string) => {
+      hasArchivedGameRef.current = false;
       const startFen = customFen || INITIAL_FEN;
       chess.load(startFen);
       setFen(chess.fen());
@@ -237,8 +363,17 @@ export const App: React.FC = () => {
 
       // Compute initial evaluation
       setEvalScore(evaluateBoard(chess));
+
+      // Reset Blunder Shield warning & trigger bot start banter
+      setBlunderWarning(null);
+      if (settings.mode === 'vs-ai') {
+        const bot = getBotById(selectedBotId);
+        setBotBanterMessage(getRandomBanter(bot.quotes.start));
+      } else {
+        setBotBanterMessage(null);
+      }
     },
-    [chess, settings.mode, settings.playerColorChoice, settings.timeControl]
+    [chess, settings.mode, settings.playerColorChoice, settings.timeControl, selectedBotId]
   );
 
   // Trigger New Game whenever game mode or time control changes
@@ -250,6 +385,58 @@ export const App: React.FC = () => {
   const executeMove = useCallback(
     (from: Square, to: Square, promotion?: PieceType): boolean => {
       if (termination !== 'in_progress') return false;
+
+      // Blunder Shield: In vs-ai mode on player's turn, warn before hanging queen or checkmate
+      if (
+        settings.blunderShield &&
+        settings.mode === 'vs-ai' &&
+        chess.turn() === playerColor &&
+        !blunderOverrideRef.current
+      ) {
+        try {
+          const testChess = new Chess(chess.fen());
+          const testMove = testChess.move({ from, to, promotion: promotion || 'q' });
+          if (testMove) {
+            const oppMoves = testChess.moves({ verbose: true });
+            const mateIn1 = oppMoves.some((m) => {
+              const mateTest = new Chess(testChess.fen());
+              mateTest.move(m);
+              return mateTest.isCheckmate();
+            });
+
+            let blunderMsg: string | null = null;
+            if (mateIn1) {
+              blunderMsg = 'Allows an immediate checkmate for opponent!';
+            } else {
+              for (const om of oppMoves) {
+                if (om.captured === 'q') {
+                  blunderMsg = `Hangs your Queen on ${om.to}!`;
+                  break;
+                } else if (om.captured === 'r' && testMove.piece !== 'q') {
+                  if (['p', 'n', 'b'].includes(om.piece)) {
+                    blunderMsg = `Hangs your Rook to opponent's ${
+                      om.piece === 'p' ? 'Pawn' : om.piece === 'n' ? 'Knight' : 'Bishop'
+                    }!`;
+                    break;
+                  }
+                }
+              }
+            }
+
+            if (blunderMsg) {
+              setBlunderWarning({
+                from,
+                to,
+                promotion,
+                message: blunderMsg,
+              });
+              return false;
+            }
+          }
+        } catch {
+          // ignore validation error
+        }
+      }
 
       try {
         const move = chess.move({
@@ -288,6 +475,19 @@ export const App: React.FC = () => {
           }
         }
 
+        // Bot banter reactions to moves during play
+        if (settings.mode === 'vs-ai') {
+          const bot = getBotById(selectedBotId);
+          if (movedColor !== playerColor) {
+            // Bot moved
+            if (chess.inCheck()) {
+              setBotBanterMessage(getRandomBanter(bot.quotes.onCheck));
+            } else if (move.captured === 'q') {
+              setBotBanterMessage(getRandomBanter(bot.quotes.onCaptureQueen));
+            }
+          }
+        }
+
         // Update history
         const newHistoryItem: MoveHistoryItem = {
           ply: history.length + 1,
@@ -320,6 +520,19 @@ export const App: React.FC = () => {
           setIsGameOverModalOpen(true);
           const didPlayerWin = settings.mode === 'vs-ai' ? status.winner === playerColor : status.winner !== null;
           soundEngine.playGameOver(didPlayerWin);
+          archiveGame(status.termination, status.winner, updatedHistory);
+
+          if (settings.mode === 'vs-ai') {
+            const bot = getBotById(selectedBotId);
+            if (status.winner === playerColor) {
+              setBotBanterMessage(getRandomBanter(bot.quotes.onLoss));
+            } else if (status.winner !== null) {
+              setBotBanterMessage(getRandomBanter(bot.quotes.onWin));
+            } else {
+              setBotBanterMessage(getRandomBanter(bot.quotes.onDraw));
+            }
+          }
+
           return true;
         }
 
@@ -343,8 +556,11 @@ export const App: React.FC = () => {
       settings.timeControl.incrementSeconds,
       settings.mode,
       settings.autoFlipPassAndPlay,
+      settings.blunderShield,
       checkGameStatus,
       playerColor,
+      selectedBotId,
+      archiveGame,
     ]
   );
 
@@ -423,6 +639,7 @@ export const App: React.FC = () => {
             setWinner('b');
             setIsGameOverModalOpen(true);
             soundEngine.playGameOver(playerColor === 'b');
+            archiveGame('timeout', 'b');
             return 0;
           }
           return prev - 1;
@@ -435,6 +652,7 @@ export const App: React.FC = () => {
             setWinner('w');
             setIsGameOverModalOpen(true);
             soundEngine.playGameOver(playerColor === 'w');
+            archiveGame('timeout', 'w');
             return 0;
           }
           return prev - 1;
@@ -443,7 +661,7 @@ export const App: React.FC = () => {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [termination, settings.timeControl.category, chess, playerColor]);
+  }, [termination, settings.timeControl.category, chess, playerColor, archiveGame]);
 
   // Handle Promotion Selection
   const handlePromotionSelect = (piece: PieceType) => {
@@ -530,6 +748,7 @@ export const App: React.FC = () => {
     setWinner(winningColor);
     setIsGameOverModalOpen(true);
     soundEngine.playGameOver(settings.mode === 'vs-ai' ? false : true);
+    archiveGame('resignation', winningColor);
   };
 
   // Draw Offer
@@ -539,6 +758,7 @@ export const App: React.FC = () => {
     setWinner(null);
     setIsGameOverModalOpen(true);
     soundEngine.playGameOver(false);
+    archiveGame('draw_agreement', null);
   };
 
   // Copy PGN
@@ -655,26 +875,6 @@ export const App: React.FC = () => {
   const bottomAdvantage = isWhiteBottom ? Math.max(0, materialAdvantage) : Math.max(0, -materialAdvantage);
   const topAdvantage = isWhiteBottom ? Math.max(0, -materialAdvantage) : Math.max(0, materialAdvantage);
 
-  const getPlayerDetails = (color: PieceColor) => {
-    if (settings.mode === 'vs-ai') {
-      if (color === playerColor) {
-        return { name: 'You', title: undefined, rating: '1500' };
-      }
-      const diffLabels: Record<AiDifficulty, { name: string; title: string; rating: string }> = {
-        easy: { name: 'Stockfish Lite', title: 'BOT', rating: '800' },
-        medium: { name: 'Stockfish Junior', title: 'BOT', rating: '1400' },
-        hard: { name: 'Stockfish Master', title: 'BOT', rating: '1800' },
-        master: { name: 'Grandmaster AI', title: 'GM', rating: '2200' },
-      };
-      return diffLabels[settings.aiDifficulty];
-    }
-    return {
-      name: color === 'w' ? 'White' : 'Black',
-      title: undefined,
-      rating: undefined,
-    };
-  };
-
   const topDetails = getPlayerDetails(topPlayerColor);
   const bottomDetails = getPlayerDetails(bottomPlayerColor);
 
@@ -759,15 +959,61 @@ export const App: React.FC = () => {
 
   if (activeView === 'hub') {
     return (
-      <LearningHub
-        onStartGame={handleStartGame}
-        onStartPuzzleRush={(rating) => {
-          setPuzzleRushRating(rating);
-          setActiveView('puzzles');
-        }}
-        onOpenLibrary={setActiveView}
-      />
+      <>
+        <LearningHub
+          onStartGame={handleStartGame}
+          onStartPuzzleRush={(rating) => {
+            setPuzzleRushRating(rating);
+            setActiveView('puzzles');
+          }}
+          onOpenLibrary={setActiveView}
+          onOpenArchive={() => setIsGameArchiveOpen(true)}
+          onOpenAnalysis={() => handleOpenAnalysis()}
+          onOpenVisionTrainer={() => setActiveView('vision')}
+          onOpenBotSelector={() => setIsBotSelectorOpen(true)}
+        />
+        <BotSelectorModal
+          isOpen={isBotSelectorOpen}
+          onClose={() => setIsBotSelectorOpen(false)}
+          selectedBotId={selectedBotId}
+          onSelectBot={(bot) => {
+            setSelectedBotId(bot.id);
+            setSettings((curr) => ({ ...curr, mode: 'vs-ai', aiDifficulty: bot.difficulty }));
+            setBotBanterMessage(getRandomBanter(bot.quotes.start));
+            setActiveView('game');
+            startNewGame();
+          }}
+        />
+        <GameArchiveModal
+          isOpen={isGameArchiveOpen}
+          onClose={() => setIsGameArchiveOpen(false)}
+          onOpenReview={handleOpenArchivedReview}
+        />
+        <GameReviewModal
+          isOpen={isGameReviewOpen}
+          onClose={() => setIsGameReviewOpen(false)}
+          moves={reviewMoves}
+          whiteName={reviewWhiteName}
+          blackName={reviewBlackName}
+          result={reviewResult}
+          playerColor={reviewPlayerColor}
+          onOpenAnalysis={(m) => handleOpenAnalysis(m)}
+          onOpenShare={() => setIsSocialShareOpen(true)}
+        />
+        <SocialShareModal
+          isOpen={isSocialShareOpen}
+          onClose={() => setIsSocialShareOpen(false)}
+          whiteName={reviewWhiteName}
+          blackName={reviewBlackName}
+          result={reviewResult}
+          movesCount={reviewMoves.length}
+        />
+      </>
     );
+  }
+
+  if (activeView === 'vision') {
+    return <CoordinateTrainer onExit={() => setActiveView('hub')} boardTheme={settings.boardTheme} />;
   }
 
   if (activeView === 'puzzles') {
@@ -776,6 +1022,18 @@ export const App: React.FC = () => {
 
   if (activeView === 'openings' || activeView === 'endgames') {
     return <StudyLibrary library={activeView} onExit={() => setActiveView('hub')} />;
+  }
+
+  if (activeView === 'analysis') {
+    return (
+      <AnalysisBoard
+        initialFen={analysisParams?.fen}
+        initialMoves={analysisParams?.moves}
+        initialPgn={analysisParams?.pgn}
+        boardTheme={settings.boardTheme}
+        onExit={() => setActiveView('hub')}
+      />
+    );
   }
 
   return (
@@ -807,6 +1065,22 @@ export const App: React.FC = () => {
             <House className="h-3.5 w-3.5" />
             Hub
           </button>
+          <button
+            onClick={() => setIsGameArchiveOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold text-neutral-300 hover:bg-[#312e2b] hover:text-white"
+            title="View Match History & Review Past Games"
+          >
+            <History className="h-3.5 w-3.5 text-[#81b64c]" />
+            History
+          </button>
+          <button
+            onClick={() => handleOpenAnalysis()}
+            className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold text-neutral-300 hover:bg-[#312e2b] hover:text-white"
+            title="Open Free Analysis Sandbox & Board Editor"
+          >
+            <Compass className="h-3.5 w-3.5 text-sky-400" />
+            Analysis
+          </button>
           {isAiThinking && (
             <div className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-[#81b64c]/10 border border-[#81b64c]/40 text-[#81b64c] text-xs font-semibold animate-pulse">
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -829,6 +1103,22 @@ export const App: React.FC = () => {
         <div className="flex flex-col items-center w-full max-w-[660px] mx-auto space-y-2">
           {/* Top Player Card (Opponent) */}
           <div className="w-full space-y-1">
+            {settings.mode === 'vs-ai' && topPlayerColor !== playerColor && (
+              <div className="flex items-center justify-between px-1">
+                <span className="text-[10px] uppercase font-bold tracking-wider text-neutral-400">
+                  AI Opponent • {topDetails.title || 'BOT'}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsBotSelectorOpen(true)}
+                  className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-400 hover:text-amber-300 transition"
+                  title="Switch Opponent Bot"
+                >
+                  <Bot className="w-3.5 h-3.5" />
+                  <span>Switch Bot</span>
+                </button>
+              </div>
+            )}
             <ChessClock
               color={topPlayerColor}
               timeRemainingSeconds={topTime}
@@ -839,6 +1129,13 @@ export const App: React.FC = () => {
               playerTitle={topDetails.title}
               rating={topDetails.rating}
             />
+            {settings.mode === 'vs-ai' && (
+              <BotBanterBubble
+                bot={getBotById(selectedBotId)}
+                message={botBanterMessage}
+                onDismiss={() => setBotBanterMessage(null)}
+              />
+            )}
             <CapturedPieces
               captured={topCaptured}
               opponentColor={topPlayerColor === 'w' ? 'b' : 'w'}
@@ -1193,6 +1490,92 @@ export const App: React.FC = () => {
         mode={settings.mode}
         onNewGame={() => startNewGame()}
         onClose={() => setIsGameOverModalOpen(false)}
+        onOpenReview={handleOpenCurrentReview}
+        onOpenShare={() => setIsSocialShareOpen(true)}
+      />
+
+      {/* Game Review Modal */}
+      <GameReviewModal
+        isOpen={isGameReviewOpen}
+        onClose={() => setIsGameReviewOpen(false)}
+        moves={reviewMoves}
+        whiteName={reviewWhiteName}
+        blackName={reviewBlackName}
+        result={reviewResult}
+        playerColor={reviewPlayerColor}
+        onOpenAnalysis={(m) => handleOpenAnalysis(m)}
+        onOpenShare={() => setIsSocialShareOpen(true)}
+      />
+
+      {/* Social Share Modal */}
+      <SocialShareModal
+        isOpen={isSocialShareOpen}
+        onClose={() => setIsSocialShareOpen(false)}
+        whiteName={getPlayerDetails('w').name}
+        blackName={getPlayerDetails('b').name}
+        result={winner === 'w' ? '1-0' : winner === 'b' ? '0-1' : termination !== 'in_progress' ? '1/2-1/2' : '*'}
+        movesCount={history.length}
+        openingName={studyContext.openingWithVariations?.opening.name}
+      />
+
+      {/* Bot Selector Modal */}
+      <BotSelectorModal
+        isOpen={isBotSelectorOpen}
+        onClose={() => setIsBotSelectorOpen(false)}
+        selectedBotId={selectedBotId}
+        onSelectBot={(bot) => {
+          setSelectedBotId(bot.id);
+          setSettings((curr) => ({ ...curr, mode: 'vs-ai', aiDifficulty: bot.difficulty }));
+          setBotBanterMessage(getRandomBanter(bot.quotes.start));
+          startNewGame();
+        }}
+      />
+
+      {/* Blunder Shield Alert Modal */}
+      {blunderWarning && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-4 animate-pop-in">
+          <div className="bg-[#24211d] border-2 border-rose-500/60 rounded-2xl p-5 sm:p-6 shadow-2xl max-w-sm w-full text-center space-y-4">
+            <div className="w-12 h-12 rounded-full bg-rose-500/20 border border-rose-500/40 mx-auto flex items-center justify-center text-rose-400">
+              <ShieldAlert className="w-6 h-6 animate-pulse" />
+            </div>
+            <div>
+              <h3 className="text-lg font-black text-white">Blunder Shield Alert</h3>
+              <p className="text-xs text-rose-300 font-bold mt-1">
+                {blunderWarning.message}
+              </p>
+              <p className="text-[11px] text-neutral-400 mt-2">
+                Your move leaves a major piece undefended or allows immediate mate.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-2 pt-2">
+              <button
+                onClick={() => setBlunderWarning(null)}
+                className="py-2.5 px-3 rounded-xl bg-[#81b64c] hover:bg-[#92c957] text-white text-xs font-bold transition shadow-sm"
+              >
+                Retract Move
+              </button>
+              <button
+                onClick={() => {
+                  const warn = blunderWarning;
+                  setBlunderWarning(null);
+                  blunderOverrideRef.current = true;
+                  executeMove(warn.from, warn.to, warn.promotion);
+                  blunderOverrideRef.current = false;
+                }}
+                className="py-2.5 px-3 rounded-xl bg-[#312e2b] hover:bg-[#3d3a34] text-neutral-300 text-xs font-semibold transition"
+              >
+                Play Anyway
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Game Archive Modal */}
+      <GameArchiveModal
+        isOpen={isGameArchiveOpen}
+        onClose={() => setIsGameArchiveOpen(false)}
+        onOpenReview={handleOpenArchivedReview}
       />
 
       {/* Settings Modal */}

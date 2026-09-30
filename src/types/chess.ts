@@ -52,6 +52,7 @@ export interface GameSettings {
   showLegalMoves: boolean;
   showEvaluationBar: boolean;
   autoFlipPassAndPlay: boolean;
+  blunderShield?: boolean;
 }
 
 export interface EvaluationResult {

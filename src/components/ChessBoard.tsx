@@ -1,7 +1,13 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { Chess, Square, Move } from 'chess.js';
 import { PieceColor, PieceType, BoardTheme } from '../types/chess';
 import { ChessPieceIcon } from '../utils/pieces';
+
+export interface BoardArrow {
+  from: Square;
+  to: Square;
+  color?: string;
+}
 
 interface ChessBoardProps {
   chess: Chess;
@@ -12,6 +18,9 @@ interface ChessBoardProps {
   lastMove?: { from: Square; to: Square } | null;
   onMove: (from: Square, to: Square, promotion?: PieceType) => boolean;
   onRequestPromotion: (from: Square, to: Square) => void;
+  customArrows?: BoardArrow[];
+  customHighlights?: Partial<Record<Square, string>>;
+  enableRightClickDraw?: boolean;
 }
 
 export const ChessBoard: React.FC<ChessBoardProps> = ({
@@ -23,9 +32,15 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
   lastMove,
   onMove,
   onRequestPromotion,
+  customArrows,
+  customHighlights,
+  enableRightClickDraw = true,
 }) => {
   const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
   const [draggedSquare, setDraggedSquare] = useState<Square | null>(null);
+  const [drawnArrows, setDrawnArrows] = useState<BoardArrow[]>([]);
+  const [drawnHighlights, setDrawnHighlights] = useState<Partial<Record<Square, string>>>({});
+  const rightClickStartRef = useRef<Square | null>(null);
 
   // Compute legal moves from the selected square
   const legalMovesFromSelected = useMemo(() => {
@@ -172,9 +187,90 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
     setSelectedSquare(null);
   };
 
+  const handleSquareMouseDown = (e: React.MouseEvent, square: Square) => {
+    if (!enableRightClickDraw) return;
+    if (e.button === 2) {
+      e.preventDefault();
+      rightClickStartRef.current = square;
+    } else if (e.button === 0) {
+      if (drawnArrows.length > 0 || Object.keys(drawnHighlights).length > 0) {
+        setDrawnArrows([]);
+        setDrawnHighlights({});
+      }
+    }
+  };
+
+  const handleSquareMouseUp = (e: React.MouseEvent, square: Square) => {
+    if (!enableRightClickDraw) return;
+    if (e.button === 2) {
+      e.preventDefault();
+      const startSquare = rightClickStartRef.current;
+      rightClickStartRef.current = null;
+      if (!startSquare) return;
+
+      if (startSquare === square) {
+        setDrawnHighlights((prev) => {
+          const next = { ...prev };
+          if (next[square]) {
+            delete next[square];
+          } else {
+            next[square] = 'rgba(239, 68, 68, 0.4)';
+          }
+          return next;
+        });
+      } else {
+        setDrawnArrows((prev) => {
+          const exists = prev.some((a) => a.from === startSquare && a.to === square);
+          if (exists) {
+            return prev.filter((a) => !(a.from === startSquare && a.to === square));
+          } else {
+            return [...prev, { from: startSquare, to: square, color: '#81b64c' }];
+          }
+        });
+      }
+    }
+  };
+
+  const allArrows = useMemo(() => {
+    return [...(customArrows || []), ...drawnArrows];
+  }, [customArrows, drawnArrows]);
+
+  const allHighlights = useMemo(() => {
+    return { ...drawnHighlights, ...(customHighlights || {}) };
+  }, [drawnHighlights, customHighlights]);
+
+  const getArrowCoords = (from: Square, to: Square) => {
+    const col1 = files.indexOf(from[0]);
+    const row1 = ranks.indexOf(from[1]);
+    const col2 = files.indexOf(to[0]);
+    const row2 = ranks.indexOf(to[1]);
+    if (col1 === -1 || row1 === -1 || col2 === -1 || row2 === -1) return null;
+
+    const x1 = col1 * 100 + 50;
+    const y1 = row1 * 100 + 50;
+    const x2 = col2 * 100 + 50;
+    const y2 = row2 * 100 + 50;
+
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const dist = Math.hypot(dx, dy);
+    if (dist === 0) return null;
+
+    const ux = dx / dist;
+    const uy = dy / dist;
+
+    return {
+      x1: x1 + ux * 18,
+      y1: y1 + uy * 18,
+      x2: x2 - ux * 28,
+      y2: y2 - uy * 28,
+    };
+  };
+
   return (
     <div
-      className={`board-theme-${theme} aspect-square w-full max-w-[620px] rounded-lg shadow-2xl overflow-hidden grid grid-cols-8 grid-rows-8 border-4 border-[#2b2723] select-none touch-none`}
+      onContextMenu={(e) => e.preventDefault()}
+      className={`board-theme-${theme} relative aspect-square w-full max-w-[620px] rounded-lg shadow-2xl overflow-hidden grid grid-cols-8 grid-rows-8 border-4 border-[#2b2723] select-none touch-none`}
     >
       {ranks.map((rank, rankIdx) =>
         files.map((file, fileIdx) => {
@@ -202,6 +298,8 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
             <div
               key={square}
               onClick={() => handleSquareClick(square)}
+              onMouseDown={(e) => handleSquareMouseDown(e, square)}
+              onMouseUp={(e) => handleSquareMouseUp(e, square)}
               onDragOver={handleDragOver}
               onDrop={(e) => handleDrop(e, square)}
               className={`relative flex items-center justify-center cursor-pointer transition-colors duration-150 ${
@@ -258,6 +356,106 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
           );
         })
       )}
+
+      {/* Visual Overlay: SVG Arrows and Square Highlights */}
+      <svg
+        className="absolute inset-0 w-full h-full pointer-events-none z-20"
+        viewBox="0 0 800 800"
+      >
+        <defs>
+          <marker
+            id="arrow-green"
+            viewBox="0 0 10 10"
+            refX="6"
+            refY="5"
+            markerWidth="6"
+            markerHeight="6"
+            orient="auto-start-reverse"
+          >
+            <path d="M 0 1 L 10 5 L 0 9 z" fill="#81b64c" />
+          </marker>
+          <marker
+            id="arrow-orange"
+            viewBox="0 0 10 10"
+            refX="6"
+            refY="5"
+            markerWidth="6"
+            markerHeight="6"
+            orient="auto-start-reverse"
+          >
+            <path d="M 0 1 L 10 5 L 0 9 z" fill="#f59e0b" />
+          </marker>
+          <marker
+            id="arrow-blue"
+            viewBox="0 0 10 10"
+            refX="6"
+            refY="5"
+            markerWidth="6"
+            markerHeight="6"
+            orient="auto-start-reverse"
+          >
+            <path d="M 0 1 L 10 5 L 0 9 z" fill="#3b82f6" />
+          </marker>
+          <marker
+            id="arrow-red"
+            viewBox="0 0 10 10"
+            refX="6"
+            refY="5"
+            markerWidth="6"
+            markerHeight="6"
+            orient="auto-start-reverse"
+          >
+            <path d="M 0 1 L 10 5 L 0 9 z" fill="#ef4444" />
+          </marker>
+        </defs>
+
+        {/* Square Highlights */}
+        {Object.entries(allHighlights).map(([sq, color]) => {
+          const col = files.indexOf(sq[0]);
+          const row = ranks.indexOf(sq[1]);
+          if (col === -1 || row === -1) return null;
+          return (
+            <rect
+              key={sq}
+              x={col * 100}
+              y={row * 100}
+              width={100}
+              height={100}
+              fill={color || 'rgba(239, 68, 68, 0.4)'}
+            />
+          );
+        })}
+
+        {/* Directional Arrows */}
+        {allArrows.map((arrow, idx) => {
+          const coords = getArrowCoords(arrow.from, arrow.to);
+          if (!coords) return null;
+          const color = arrow.color || '#81b64c';
+          const markerId =
+            color.includes('3b82f6') || color === 'blue'
+              ? 'arrow-blue'
+              : color.includes('ef4444') || color === 'red'
+              ? 'arrow-red'
+              : color.includes('f59e0b') || color === 'orange'
+              ? 'arrow-orange'
+              : 'arrow-green';
+
+          return (
+            <line
+              key={`${arrow.from}-${arrow.to}-${idx}`}
+              x1={coords.x1}
+              y1={coords.y1}
+              x2={coords.x2}
+              y2={coords.y2}
+              stroke={color}
+              strokeWidth="14"
+              strokeLinecap="round"
+              markerEnd={`url(#${markerId})`}
+              opacity="0.88"
+            />
+          );
+        })}
+      </svg>
     </div>
   );
 };

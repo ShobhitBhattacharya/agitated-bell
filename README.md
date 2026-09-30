@@ -4,7 +4,7 @@ A high-performance modern web chess application and interactive learning platfor
 
 ![FIDE Rules Compliant](https://img.shields.io/badge/FIDE-100%25%20Rule%20Compliant-brightgreen)
 ![Chess.com Standards](https://img.shields.io/badge/UX-Chess.com%20Standard-success)
-![Tests](https://img.shields.io/badge/Vitest-36%20Passed-blue)
+![Tests](https://img.shields.io/badge/Vitest-60%20Passed-blue)
 ![Puzzles](https://img.shields.io/badge/Lichess%20CC0-150%20Puzzles-yellow)
 ![Openings](https://img.shields.io/badge/Openings-18%20Model%20Lines-informational)
 ![Endgames](https://img.shields.io/badge/Endgames-14%20Principle%20Lessons-purple)
@@ -19,9 +19,35 @@ A high-performance modern web chess application and interactive learning platfor
 - **Multi-Tier Web Worker AI**: Minimax engine with alpha-beta pruning, piece-square tables, and move ordering running off-thread at 4 levels (Casual ~800 to Master ~2000).
 - **Live Evaluation Bar**: Smooth real-time advantage indicator calibrated in centipawns.
 - **Dual Chess Clocks**: Customizable time controls with Fischer increments (Bullet, Blitz, Rapid, Classical, Custom).
-- **Audio & Visuals**: Procedural zero-dependency Web Audio sound effects, move highlights, and custom board themes.
+- **Audio & Visuals**: Procedural zero-dependency Web Audio sound effects, move highlights, right-click SVG drag arrows, square highlight tints, and custom board themes.
+- **Blunder Shield Alert**: Optional beginner safeguard warning before hanging your Queen or dropping into mate-in-1.
 
-### 2. 🎓 Interactive Learning Hub & Drills
+### 2. 📊 Post-Game Review & CAPS Accuracy Engine
+- **CAPS Accuracy Scoring**: Industry-standard accuracy percentages calibrated with mathematical precision ($103.1668 \times e^{-0.4354 \times \text{pawns}} - 3.1669$) alongside Average Centipawn Loss (ACPL) for both players.
+- **FIDE/Chess.com Move Classification**: Moves classified into `!!` Brilliant, `!` Great, `★` Best, `✔` Excellent, `?!` Inaccuracy, `?` Mistake, `??` Blunder, and `⚡` Missed Win.
+- **Centipawn Advantage Graph**: Visual swing graph mapping momentum across all plies.
+- **"Retry Your Mistakes" Interactive Drill**: Replay critical moments where you made an inaccuracy, mistake, or blunder and discover the engine's best move.
+- **Match Archive & Lifetime Statistics**: Automatic local persistence tracking total games, wins, losses, draws, win-rate %, and favorite openings.
+
+### 3. 🧭 Free Analysis Sandbox & Board Editor
+- **Custom Position Setup**: Visual piece palette (drag or click pieces, trash/clear, board flip, side to move, castling rights).
+- **FEN & PGN Import/Export**: One-click import and export to analyze custom games and positions.
+- **Live Engine Lines & Move Recommendation**: Continuous minimax positional evaluation with on-board green arrow recommendations.
+- **Board Annotations**: Right-click drag arrows (green, red, blue, orange) and right-click square highlight tints.
+
+### 4. 🤖 Distinct Bot Personalities & In-Game Banter
+- **4 Custom Opponents**:
+  - 🦁 **Mikhail** (~1100 ELO): *The Tal Disciple* — aggressive king hunts, tactical sacrifices.
+  - 🦉 **Elena** (~1500 ELO): *The Strategist* — solid positional play, central control.
+  - 🐺 **Viktor** (~1800 ELO): *The Endgame Grinder* — meticulous pawn structures, technical conversion.
+  - 👑 **Magnus Bot** (~2400 ELO): *Universal Champion* — relentless, uncompromising master-level play.
+- **Real-Time Context Banter**: Responsive speech bubbles reacting to game start, checks, blunders, queen captures, and game results.
+
+### 5. 🎯 Training Mini-Games & Social Sharing
+- **30-Second Coordinate Vision Trainer**: Rapid-fire drill testing board notation recognition with streaks, timer, and high score tracking.
+- **Branded Social Share Cards**: 1-click clipboard summary card generation to share game outcomes, accuracies, and openings with friends.
+
+### 6. 🎓 Interactive Learning Hub & Drills
 - **Curriculum Roadmap (28 Lessons)**: Structured topic breakdown across Opening Principles, Positional Ideas, Tactical Motifs, Endgame Mastery, and Checkmate Patterns with local streak and progress persistence.
 - **Opening Repertoires, Deep Lines (10–16 Plies) & Playstyle Taxonomy**:
   - 18 tournament-tested opening repertoires deepened to **10–16 plies** (5–8 full moves), establishing tournament/engine-tested "Best Lines" with automated book replies and named variations:
@@ -48,22 +74,9 @@ A high-performance modern web chess application and interactive learning platfor
   - **In-Game Theory Coach**: Real-time opening detection with playstyle badge, player benefit, recommended 10–16 ply best line with a live **Next Best Move** chip, and interactive **Candidate Variations** tabs.
   - **Multi-Variation Study Drills**: Switch dynamically between Main Best Line and individual branch variations in interactive drills.
 - **Interactive Endgame Drills (14 Principle Lessons + 72 Rated Drills)**: Hands-on practice for essential endgame techniques:
-  - *The Lucena Position*: Building a bridge with the rook to escort the pawn.
-  - *The Philidor Defense*: Passive/active 3rd & 6th rank stand against advancing rooks.
-  - *Direct Opposition*: Key King maneuvers to outflank the defender.
-  - *Distant Opposition*: Controlling squares across odd distances to establish direct opposition.
-  - *Square of the Pawn*: Rapid calculation of pawn promotion boundaries.
-  - *Rook Behind Passed Pawn*: Tarrasch rule application and rook activity.
-  - *Pawn Breakthrough*: Sacrificial line breakthroughs in symmetrical structures.
-  - *King & Queen vs King Checkmate*: Systematic boxing and cornering technique.
-  - *King & Rook vs King Checkmate*: Cutting the ranks and file-by-file barrier construction.
-  - *Queen vs Pawn on 7th Rank*: Using checks and pinning to escort your king.
-  - *King Triangulation*: Losing a tempo with the king to put the defender in zugzwang.
-  - *Réti's Dual Threat Endgame*: Simultaneous diagonal pursuit chasing pawns and supporting promotion.
-  - *Rook vs Bishop Fortress*: Holding the draw in the safe corner opposite to the bishop's color.
-  - *Wrong-Colored Bishop & Rook Pawn*: Defending the promotion corner against the unsupporting bishop.
+  - *The Lucena Position*, *The Philidor Defense*, *Direct Opposition*, *Distant Opposition*, *Square of the Pawn*, *Rook Behind Passed Pawn*, *Pawn Breakthrough*, *King & Queen vs King Checkmate*, *King & Rook vs King Checkmate*, *Queen vs Pawn on 7th Rank*, *King Triangulation*, *Réti's Dual Threat Endgame*, *Rook vs Bishop Fortress*, *Wrong-Colored Bishop & Rook Pawn*.
 
-### 3. ⚡ Puzzle Rush Tactical Sprint
+### 7. ⚡ Puzzle Rush Tactical Sprint
 - **2-Minute Timed Rush**: Real-time solving sprint with instant move feedback and automatic defensive responses.
 - **Stratified CC0 Puzzle Catalogue**: 150 curated, FIDE-legal puzzles from the official Lichess open database spanning ratings 473 through 3062 across Beginner (<800: 33 puzzles), Intermediate (800–2200: 88 puzzles), and Master (2200+: 29 puzzles) pools.
 - **Endgame Tactical Drills**: 72 rated endgame positions directly filterable in the Study Library for targeted endgame tactical practice.

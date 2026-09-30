@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import { GameTermination, PieceColor, GameMode } from '../types/chess';
-import { Trophy, Award, RotateCcw, X, Eye } from 'lucide-react';
+import { Trophy, Award, RotateCcw, X, Eye, Sparkles, Share2 } from 'lucide-react';
 
 interface GameOverModalProps {
   isOpen: boolean;
@@ -11,6 +11,8 @@ interface GameOverModalProps {
   mode: GameMode;
   onNewGame: () => void;
   onClose: () => void;
+  onOpenReview?: () => void;
+  onOpenShare?: () => void;
 }
 
 export const GameOverModal: React.FC<GameOverModalProps> = ({
@@ -21,6 +23,8 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
   mode,
   onNewGame,
   onClose,
+  onOpenReview,
+  onOpenShare,
 }) => {
   useEffect(() => {
     if (!isOpen) return;
@@ -132,6 +136,26 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
 
         {/* Buttons */}
         <div className="space-y-2.5">
+          {onOpenReview && (
+            <button
+              onClick={onOpenReview}
+              className="w-full flex items-center justify-center space-x-2 py-3 px-4 rounded-xl bg-gradient-to-r from-[#81b64c] to-emerald-600 hover:from-[#92c957] hover:to-emerald-500 text-white font-extrabold text-sm sm:text-base shadow-lg transition active:scale-[0.98]"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>Full Game Review</span>
+            </button>
+          )}
+
+          {onOpenShare && (
+            <button
+              onClick={onOpenShare}
+              className="w-full flex items-center justify-center space-x-2 py-2.5 px-4 rounded-xl bg-[#2a2d24] hover:bg-[#34382c] border border-[#81b64c]/40 text-[#c5db98] font-bold text-xs sm:text-sm transition active:scale-[0.98]"
+            >
+              <Share2 className="w-4 h-4 text-[#81b64c]" />
+              <span>Share Match Card</span>
+            </button>
+          )}
+
           <button
             onClick={onNewGame}
             className="w-full flex items-center justify-center space-x-2 py-3 px-4 rounded-xl bg-[#81b64c] hover:bg-[#92c957] active:bg-[#72a342] text-white font-bold text-sm sm:text-base shadow-lg transition active:scale-[0.98]"

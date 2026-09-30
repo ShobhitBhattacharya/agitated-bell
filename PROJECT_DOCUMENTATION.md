@@ -267,18 +267,28 @@ agitated-bell/
 │   │   ├── pieces.tsx                   # Scalable vector Staunton chess pieces (K, Q, R, B, N, P)
 │   │   ├── audio.ts                     # Web Audio API sound synthesis engine
 │   │   ├── evalTables.ts                # Piece-Square Tables (PST) for positional evaluation
-│   │   ├── chessEngine.ts               # Minimax algorithm, Alpha-Beta pruning, and move ordering
+│   │   ├── chessEngine.ts               # Minimax algorithm, Alpha-Beta pruning, deterministic best move
+│   │   ├── gameReview.ts                # CAPS Accuracy engine ($103.1668 \times e^{-0.4354 \times \text{pawns}} - 3.1669$) & move classification
+│   │   ├── gameArchive.ts               # Local game match archive, storage adapter, and lifetime stats
+│   │   ├── botPersonalities.ts          # 4 distinct AI personalities (Mikhail, Elena, Viktor, Magnus Bot) & banter quotes
 │   │   ├── chessKnowledgeBase.ts        # Explanatory concepts, roadmap categories, and study topics
 │   │   ├── progressStorage.ts           # Browser-local versioned persistence for streaks and best scores
-│   │   ├── puzzleRush.ts                # Stratified 58-puzzle CC0 catalogue & rating pool generators
-│   │   ├── studyDrills.ts               # Endgame principle lessons (opposition, square, etc.) & rated drills
-│   │   └── studyTools.ts                # Opening repertoire lessons and model-line definitions
+│   │   ├── puzzleRush.ts                # Stratified 150-puzzle CC0 catalogue & rating pool generators
+│   │   ├── studyDrills.ts               # Endgame principle lessons & 72 rated endgame drills
+│   │   └── studyTools.ts                # 18 deep opening lines (10-16 ply), 26 variations, & playstyle classification
 │   │
 │   ├── workers/
 │   │   └── chessAi.worker.ts            # Dedicated Web Worker for background AI calculation
 │   │
 │   ├── components/
-│   │   ├── ChessBoard.tsx               # 8x8 interactive board, drag-and-drop & click-to-move
+│   │   ├── ChessBoard.tsx               # 8x8 interactive board, right-click SVG arrows & square highlights
+│   │   ├── AnalysisBoard.tsx            # Full interactive sandbox, piece palette, FEN/PGN import/export, minimax eval
+│   │   ├── GameReviewModal.tsx          # Dual accuracy dials, move classification list, retry your mistakes drill
+│   │   ├── GameArchiveModal.tsx         # Match history cards, win-rates %, favorite openings, 1-click review
+│   │   ├── BotSelectorModal.tsx         # Opponent picker with ratings, tactical playstyles, and repertoires
+│   │   ├── BotBanterBubble.tsx          # Real-time reactive opponent speech bubble during games
+│   │   ├── CoordinateTrainer.tsx        # 30-second speed vision drill for board squares & notation
+│   │   ├── SocialShareModal.tsx         # Branded match summary cards with 1-click clipboard copy
 │   │   ├── EvaluationBar.tsx            # Chess.com-style vertical evaluation advantage bar
 │   │   ├── ChessClock.tsx               # Digital timer with increment and time-warning alerts
 │   │   ├── CapturedPieces.tsx           # Captured pieces tray with material lead counter
@@ -286,7 +296,7 @@ agitated-bell/
 │   │   ├── GameControls.tsx             # New Game, Undo, Redo, Flip, Draw, Resign, Sound
 │   │   ├── PromotionModal.tsx           # FIDE pawn promotion picker (Q, R, B, N)
 │   │   ├── GameOverModal.tsx            # Victory/Draw dialog with rule citations & confetti
-│   │   ├── GameSettingsModal.tsx        # Settings: AI difficulty, themes, time presets, FEN loader
+│   │   ├── GameSettingsModal.tsx        # Settings: AI difficulty, themes, time presets, FEN loader, Blunder Shield
 │   │   ├── LearningHub.tsx              # Home learning portal & quick action cards
 │   │   ├── PuzzleRush.tsx               # 2-minute timed tactical rush with feedback
 │   │   ├── StudyLibrary.tsx             # Opening repertoire and endgame practice library
@@ -296,9 +306,12 @@ agitated-bell/
 │   │
 │   └── tests/
 │       ├── chessRules.test.ts           # Vitest suite covering checkmate, stalemate, castling, AI search
+│       ├── gameReview.test.ts           # Accuracy calculation formula, ACPL, and move classifications
+│       ├── gameArchive.test.ts          # Match archiving, lifetime stats, and storage fallback
+│       ├── botPersonalities.test.ts     # Bot rating profiles, banter categories, and resolver fallbacks
 │       ├── knowledgeBase.test.ts        # Curriculum categories, roadmap order, and topic metadata
 │       ├── progressStorage.test.ts      # LocalStorage serialization, streak calculation, recovery
-│       ├── puzzleRush.test.ts           # Legality of 58 CC0 puzzle source FENs, preludes, and solutions
+│       ├── puzzleRush.test.ts           # Legality of CC0 puzzle source FENs, preludes, and solutions
 │       ├── studyDrills.test.ts          # Endgame principle drills (opposition, square, Tarrasch, etc.)
 │       ├── studyTools.test.ts           # Opening repertoire move legality and prompts
 │       └── theoryTrainer.test.ts        # Theory trainer interactive state machine
@@ -308,10 +321,20 @@ agitated-bell/
 
 ## 6. Testing & Quality Assurance
 
-The codebase is fortified with an automated test suite containing **7 test files and 34 passing tests** executed with **Vitest**.
+The codebase is fortified with an automated test suite containing **10 test files and 60 passing tests** executed with **Vitest**.
 
 ### Key Test Suites Verified
-1. **FIDE Rules & Engine Logic (`chessRules.test.ts`)**:
+1. **Game Review Engine (`gameReview.test.ts`)**:
+   - CAPS accuracy mathematical calibration ($103.1668 \times e^{-0.4354 \times \text{pawns}} - 3.1669$).
+   - Centipawn swing advantage graph generation and Key Moments extraction.
+   - Scholar's mate accuracy rating and blunder detection.
+2. **Match Archive & Storage (`gameArchive.test.ts`)**:
+   - LocalStorage persistence with memory fallback for headless testing environments.
+   - Aggregate statistics calculation (wins, losses, draws, win rate percentage, favorite opening).
+3. **Bot Personalities & Banter (`botPersonalities.test.ts`)**:
+   - Rating and difficulty alignment across all 4 bot profiles.
+   - Banter category completeness and quote resolver safety.
+4. **FIDE Rules & Engine Logic (`chessRules.test.ts`)**:
    - Checkmate (Rule 1.2) via Fool's Mate sequence (`f3 e5 g4 Qh4#`).
    - Stalemate (Rule 5.2.1) boundary stalemate position (`k7/2Q5/2K5/8/8/8/8/8 b - - 0 1`).
    - Insufficient Material (Rule 9.6) for King vs King and King + Knight vs King.

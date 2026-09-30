@@ -128,7 +128,13 @@ function minimax(
   beta: number,
   isMaximizing: boolean
 ): number {
-  if (depth === 0 || chess.isGameOver()) {
+  if (chess.isCheckmate()) {
+    return chess.turn() === 'w' ? -100000 - depth : 100000 + depth;
+  }
+  if (chess.isDraw()) {
+    return 0;
+  }
+  if (depth === 0) {
     return evaluateBoard(chess);
   }
 
@@ -251,3 +257,51 @@ export function getBestMove(chess: Chess, difficulty: AiDifficulty): BestMoveRes
     depth,
   };
 }
+
+// Deterministic engine best move search without random fuzz (ideal for post-game analysis)
+export function getEngineBestMove(chess: Chess, depth = 2): BestMoveResult | null {
+  const legalMoves = orderMoves(chess.moves({ verbose: true }));
+  if (legalMoves.length === 0) return null;
+
+  const isWhite = chess.turn() === 'w';
+  let bestMove = legalMoves[0];
+  let bestScore = isWhite ? -Infinity : Infinity;
+  let alpha = -Infinity;
+  let beta = Infinity;
+
+  for (const move of legalMoves) {
+    chess.move(move);
+    const score = minimax(chess, depth - 1, alpha, beta, !isWhite);
+    chess.undo();
+
+    if (isWhite) {
+      if (score > bestScore) {
+        bestScore = score;
+        bestMove = move;
+      }
+      alpha = Math.max(alpha, score);
+    } else {
+      if (score < bestScore) {
+        bestScore = score;
+        bestMove = move;
+      }
+      beta = Math.min(beta, score);
+    }
+    if (beta <= alpha) break;
+  }
+
+  return {
+    move: { from: bestMove.from, to: bestMove.to, promotion: bestMove.promotion },
+    score: bestScore,
+    depth,
+  };
+}
+
+export function evaluatePositionDeep(chess: Chess, depth = 1): number {
+  if (chess.isCheckmate()) {
+    return chess.turn() === 'w' ? -100000 : 100000;
+  }
+  if (chess.isDraw()) return 0;
+  return minimax(chess, depth, -Infinity, Infinity, chess.turn() === 'w');
+}
+

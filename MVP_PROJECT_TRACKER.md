@@ -441,15 +441,37 @@
 | **Sprint 7** | **Curriculum & Puzzle Expansion** | US-801, US-902, US-1001, US-1003 | `chessKnowledgeBase.ts` (28 topics), `studyTools.ts` (12 openings), `studyDrills.ts` (9 endgames), `puzzleRush.ts` (100 puzzles) | **DONE** |
 | **Sprint 8** | **Deep Library Expansion** | US-902, US-1001, US-1002, US-1003 | `studyTools.ts` (18 openings), `studyDrills.ts` (14 endgames), `puzzleRush.ts` (150 puzzles, 72 endgame drills) | **DONE** |
 | **Sprint 9** | **Deep Lines, Variations & Playstyle Taxonomy** | US-1001, US-1004, US-1005 | `studyTools.ts` (18 deep 10-16 ply lines, 26+ variations, 4 playstyles), `App.tsx` (In-Game Coach), `StudyLibrary.tsx`, `StudyDrill.tsx` | **DONE** |
+| **Sprint 10** | **Game Review, Analysis Sandbox, Bot Personalities, & Vision Trainer** | US-1101, US-1102, US-1201, US-1301, US-1401, US-1501, US-1601 | `gameReview.ts`, `gameArchive.ts`, `botPersonalities.ts`, `AnalysisBoard.tsx`, `GameReviewModal.tsx`, `GameArchiveModal.tsx`, `BotSelectorModal.tsx`, `BotBanterBubble.tsx`, `CoordinateTrainer.tsx`, `SocialShareModal.tsx`, Blunder Shield | **DONE** |
+
+---
+
+## 👑 EPIC-003: Post-Game Review, Analysis Sandbox, Bot Personalities & Training Drills
+
+### [FEAT-11] CAPS Accuracy & Game Review Engine
+- **US-1101**: Compute CAPS accuracy percentage ($103.1668 \times e^{-0.4354 \times \text{pawns}} - 3.1669$) and ACPL for both White and Black.
+- **US-1102**: Classify moves (`!!` Brilliant, `!` Great, `★` Best, `✔` Excellent, `?!` Inaccuracy, `?` Mistake, `??` Blunder, `⚡` Missed Win) and provide interactive "Retry Your Mistakes" drills.
+
+### [FEAT-12] Match Archive & Storage Persistence
+- **US-1201**: Automatically archive completed games with win/loss/draw stats, favorite openings, win rates %, and 1-click launch into full game review.
+
+### [FEAT-13] Visual Sandbox Board Editor & SVG Annotations
+- **US-1301**: Right-click drag arrows (green, red, blue, orange) and square highlights on `ChessBoard.tsx`, plus full `AnalysisBoard.tsx` sandbox with piece palette, FEN/PGN import/export, and live minimax evaluation.
+
+### [FEAT-14] Bot Personalities & Context-Aware Banter
+- **US-1401**: 4 distinct AI personalities (Mikhail 1100, Elena 1500, Viktor 1800, Magnus Bot 2400) with custom avatars, bios, opening repertoires, and dynamic speech bubbles during games.
+
+### [FEAT-15] Coordinate Vision Speed Drill & Social Sharing
+- **US-1501**: 30-second speed drill for board coordinate recognition, plus branded match summary cards with 1-click clipboard copy.
+
+### [FEAT-16] Beginner Quality of Life & Blunder Shield
+- **US-1601**: Optional Blunder Shield toggle preventing accidental queen hangs and mate-in-1 oversights with confirmation dialogs.
 
 ---
 
 ## 🔮 Future Backlog (Post-MVP Epics)
 
-- **EPIC-003: Online Multiplayer**
+- **EPIC-004: Online Multiplayer**
   - WebSockets / WebRTC peer-to-peer room matchmaking and clock synchronization.
-- **EPIC-004: Post-Game Accuracy & Engine Analysis**
-  - Full game review with move classifications (Brilliant, Great, Best, Inaccuracy, Mistake, Blunder) and centipawn loss graphs.
 - **EPIC-005: Advanced Repertoire Builder**
   - Custom repertoire builder allowing users to save and practice their own PGN variation trees.
 

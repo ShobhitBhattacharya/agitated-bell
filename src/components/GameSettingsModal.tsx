@@ -7,7 +7,7 @@ import {
   PlayerColorChoice,
   TimeControl,
 } from '../types/chess';
-import { X, Check, Bot, Users, Edit3, Volume2, Sparkles, SlidersHorizontal } from 'lucide-react';
+import { X, Check, Bot, Users, Edit3, Volume2, Sparkles, SlidersHorizontal, Shield } from 'lucide-react';
 
 interface GameSettingsModalProps {
   isOpen: boolean;
@@ -274,6 +274,22 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
                 type="checkbox"
                 checked={settings.showEvaluationBar}
                 onChange={(e) => onUpdateSettings({ showEvaluationBar: e.target.checked })}
+                className="w-4 h-4 accent-[#81b64c] cursor-pointer"
+              />
+            </label>
+
+            <label className="flex items-center justify-between cursor-pointer py-1.5 px-1 hover:bg-[#21201d] rounded-lg">
+              <div className="flex items-center space-x-2">
+                <Shield className="w-4 h-4 text-emerald-400" />
+                <div>
+                  <span className="text-xs text-neutral-300 font-medium">Blunder Shield</span>
+                  <p className="text-[10px] text-neutral-500">Alert before hanging your Queen or mate-in-1</p>
+                </div>
+              </div>
+              <input
+                type="checkbox"
+                checked={!!settings.blunderShield}
+                onChange={(e) => onUpdateSettings({ blunderShield: e.target.checked })}
                 className="w-4 h-4 accent-[#81b64c] cursor-pointer"
               />
             </label>

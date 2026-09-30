@@ -11,6 +11,10 @@ import {
   Play,
   Swords,
   Timer,
+  History,
+  Compass,
+  Target,
+  Bot,
 } from 'lucide-react';
 import { AiDifficulty } from '../types/chess';
 
@@ -18,6 +22,10 @@ interface LearningHubProps {
   onStartGame: (difficulty: AiDifficulty) => void;
   onStartPuzzleRush: (rating: number) => void;
   onOpenLibrary: (library: 'openings' | 'endgames') => void;
+  onOpenArchive?: () => void;
+  onOpenAnalysis?: () => void;
+  onOpenVisionTrainer?: () => void;
+  onOpenBotSelector?: () => void;
 }
 
 const opponents: { difficulty: AiDifficulty; name: string; elo: number; style: string; color: string }[] = [
@@ -33,7 +41,15 @@ const rushLevels = [
   { rating: 2400, label: 'Advanced', range: 'Target ~2,400' },
 ];
 
-export const LearningHub: React.FC<LearningHubProps> = ({ onStartGame, onStartPuzzleRush, onOpenLibrary }) => {
+export const LearningHub: React.FC<LearningHubProps> = ({
+  onStartGame,
+  onStartPuzzleRush,
+  onOpenLibrary,
+  onOpenArchive,
+  onOpenAnalysis,
+  onOpenVisionTrainer,
+  onOpenBotSelector,
+}) => {
   const [selectedRushRating, setSelectedRushRating] = useState(800);
 
   return (
@@ -49,9 +65,41 @@ export const LearningHub: React.FC<LearningHubProps> = ({ onStartGame, onStartPu
               <div className="text-xs text-[#aeb5a5]">Play better, one decision at a time</div>
             </div>
           </div>
-          <div className="hidden items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#abb3a3] sm:flex">
-            <span className="h-2 w-2 rounded-full bg-[#a9c56b]" />
-            Study room
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-end">
+            {onOpenVisionTrainer && (
+              <button
+                type="button"
+                onClick={onOpenVisionTrainer}
+                className="inline-flex items-center gap-1.5 rounded-md border border-amber-600/40 bg-amber-950/30 px-3 py-1.5 text-xs font-bold text-amber-300 hover:bg-amber-900/40 transition shadow-xs"
+              >
+                <Target className="h-3.5 w-3.5 text-amber-400" />
+                <span>Vision Trainer</span>
+              </button>
+            )}
+            {onOpenAnalysis && (
+              <button
+                type="button"
+                onClick={onOpenAnalysis}
+                className="inline-flex items-center gap-1.5 rounded-md border border-[#3b4334] bg-[#222720] px-3 py-1.5 text-xs font-bold text-[#dce2d4] hover:bg-[#2e352b] transition shadow-xs"
+              >
+                <Compass className="h-3.5 w-3.5 text-sky-400" />
+                <span>Analysis Board</span>
+              </button>
+            )}
+            {onOpenArchive && (
+              <button
+                type="button"
+                onClick={onOpenArchive}
+                className="inline-flex items-center gap-1.5 rounded-md border border-[#3b4334] bg-[#222720] px-3 py-1.5 text-xs font-bold text-[#dce2d4] hover:bg-[#2e352b] transition shadow-xs"
+              >
+                <History className="h-3.5 w-3.5 text-[#b2ca7c]" />
+                <span>Match History</span>
+              </button>
+            )}
+            <div className="hidden items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#abb3a3] sm:flex">
+              <span className="h-2 w-2 rounded-full bg-[#a9c56b]" />
+              Study room
+            </div>
           </div>
         </div>
       </header>
@@ -131,7 +179,20 @@ export const LearningHub: React.FC<LearningHubProps> = ({ onStartGame, onStartPu
                 </div>
                 <h2 className="mt-2 text-xl font-bold text-white">Choose your opponent</h2>
               </div>
-              <Brain className="h-7 w-7 text-[#6f7e63]" />
+              <div className="flex items-center gap-2">
+                {onOpenBotSelector && (
+                  <button
+                    type="button"
+                    onClick={onOpenBotSelector}
+                    className="inline-flex items-center gap-1.5 rounded-md border border-amber-600/40 bg-amber-950/40 px-2.5 py-1 text-xs font-bold text-amber-300 hover:bg-amber-900/50 transition shadow-xs"
+                    title="Select Bot Personality"
+                  >
+                    <Bot className="h-3.5 w-3.5" />
+                    <span>Bots</span>
+                  </button>
+                )}
+                <Brain className="h-7 w-7 text-[#6f7e63]" />
+              </div>
             </div>
             <div className="mt-5 grid grid-cols-2 gap-2">
               {opponents.map((opponent) => (
@@ -164,7 +225,7 @@ export const LearningHub: React.FC<LearningHubProps> = ({ onStartGame, onStartPu
             </div>
             <GraduationCap className="h-6 w-6 text-[#7f8d72]" />
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <button
               type="button"
               onClick={() => onOpenLibrary('openings')}
@@ -193,6 +254,42 @@ export const LearningHub: React.FC<LearningHubProps> = ({ onStartGame, onStartPu
               </span>
               <ArrowRight className="h-4 w-4 shrink-0 text-[#aeb5a5] transition group-hover:translate-x-1" />
             </button>
+            {onOpenAnalysis && (
+              <button
+                type="button"
+                onClick={onOpenAnalysis}
+                className="group flex items-center justify-between gap-4 rounded-lg border border-[#373d35] bg-[#222720] p-5 text-left transition hover:border-sky-500/60 hover:bg-[#20272b]"
+              >
+                <span className="flex items-start gap-4">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-sky-950/60 border border-sky-600/30 text-sky-400">
+                    <Compass className="h-5 w-5" />
+                  </span>
+                  <span>
+                    <span className="block text-base font-bold text-white">Analysis Sandbox</span>
+                    <span className="mt-1 block text-sm text-[#aeb5a5]">Setup custom positions, PGN import, & engine lines.</span>
+                  </span>
+                </span>
+                <ArrowRight className="h-4 w-4 shrink-0 text-[#aeb5a5] transition group-hover:translate-x-1" />
+              </button>
+            )}
+            {onOpenVisionTrainer && (
+              <button
+                type="button"
+                onClick={onOpenVisionTrainer}
+                className="group flex items-center justify-between gap-4 rounded-lg border border-[#373d35] bg-[#222720] p-5 text-left transition hover:border-amber-500/60 hover:bg-[#282720]"
+              >
+                <span className="flex items-start gap-4">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-amber-950/60 border border-amber-600/30 text-amber-400">
+                    <Target className="h-5 w-5" />
+                  </span>
+                  <span>
+                    <span className="block text-base font-bold text-white">Coordinate Vision</span>
+                    <span className="mt-1 block text-sm text-[#aeb5a5]">30s drill to master board squares & notation.</span>
+                  </span>
+                </span>
+                <ArrowRight className="h-4 w-4 shrink-0 text-[#aeb5a5] transition group-hover:translate-x-1" />
+              </button>
+            )}
           </div>
         </section>
 
