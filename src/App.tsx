@@ -7,6 +7,7 @@ import {
   GameTermination,
   MoveHistoryItem,
   AiDifficulty,
+  TimeControl,
 } from './types/chess';
 import { ChessBoard } from './components/ChessBoard';
 import { ChessClock } from './components/ChessClock';
@@ -34,7 +35,7 @@ import {
   getAdaptiveTrainerPrompt,
   TheoryLesson,
 } from './utils/studyTools';
-import { Bot, Swords, Sparkles, Loader2, Info, BookOpen, Target, House, GitBranch, History, Compass, Shield, ShieldAlert } from 'lucide-react';
+import { Bot, Swords, Sparkles, Loader2, Info, BookOpen, Target, House, GitBranch, History, Compass, Shield, ShieldAlert, Users, MessageSquare, Send, Radio, Check, Copy, X } from 'lucide-react';
 import { TheoryTrainer } from './components/TheoryTrainer';
 import { AdaptiveTrainer } from './components/AdaptiveTrainer';
 import { KnowledgeBasePanel } from './components/KnowledgeBasePanel';
@@ -50,6 +51,15 @@ import { BotSelectorModal } from './components/BotSelectorModal';
 import { BotBanterBubble } from './components/BotBanterBubble';
 import { CoordinateTrainer } from './components/CoordinateTrainer';
 import { SocialShareModal } from './components/SocialShareModal';
+import { PositionSandbox } from './components/PositionSandbox';
+import { MultiplayerModal } from './components/MultiplayerModal';
+import {
+  P2PMultiplayerManager,
+  MultiplayerMessage,
+  MovePayload,
+  ChatPayload,
+  ConnectionStatus,
+} from './utils/p2pMultiplayer';
 import {
   BotPersonalityId,
   getBotById,
@@ -137,9 +147,44 @@ export const App: React.FC = () => {
   const completedStudyTopics = studyProgress.completedTopicIds;
   const studyStreakDays = useMemo(() => getStudyStreakDays(studyProgress.activityDates), [studyProgress.activityDates]);
   const [lessonChallenge, setLessonChallenge] = useState<{ lessonId: string; targetMove: string } | null>(null);
-  const [activeView, setActiveView] = useState<'hub' | 'game' | 'puzzles' | 'openings' | 'endgames' | 'analysis' | 'vision'>('hub');
+  const [activeView, setActiveView] = useState<'hub' | 'game' | 'puzzles' | 'openings' | 'endgames' | 'analysis' | 'vision' | 'sandbox'>('hub');
   const [puzzleRushRating, setPuzzleRushRating] = useState(800);
   const [analysisParams, setAnalysisParams] = useState<{ moves?: string[]; fen?: string; pgn?: string } | null>(null);
+
+  // Multiplayer P2P WebRTC State
+  const [isMultiplayerModalOpen, setIsMultiplayerModalOpen] = useState<boolean>(false);
+  const [multiplayerInitialRoom, setMultiplayerInitialRoom] = useState<string | undefined>(undefined);
+  const [multiplayerOpponentName, setMultiplayerOpponentName] = useState<string>('Friend');
+  const [isMultiplayerHost, setIsMultiplayerHost] = useState<boolean>(false);
+  const [multiplayerRoomCode, setMultiplayerRoomCode] = useState<string | null>(null);
+  const [multiplayerChatMessages, setMultiplayerChatMessages] = useState<ChatPayload[]>([]);
+  const [isMultiplayerChatOpen, setIsMultiplayerChatOpen] = useState<boolean>(false);
+  const [multiplayerChatDraft, setMultiplayerChatDraft] = useState<string>('');
+  const [multiplayerDrawOffered, setMultiplayerDrawOffered] = useState<boolean>(false);
+  const [multiplayerDisconnected, setMultiplayerDisconnected] = useState<boolean>(false);
+  const multiplayerManagerRef = useRef<P2PMultiplayerManager | null>(null);
+  const isLocalMultiplayerMoveRef = useRef<boolean>(true);
+
+  // Check URL query parameters for room code on load (e.g. ?room=CM-8F2K)
+  useEffect(() => {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const roomParam = urlParams.get('room');
+      if (roomParam) {
+        setMultiplayerInitialRoom(roomParam);
+        setIsMultiplayerModalOpen(true);
+      }
+    } catch {
+      // safe fallback
+    }
+  }, []);
+
+  // Cleanup multiplayer manager on unmount
+  useEffect(() => {
+    return () => {
+      multiplayerManagerRef.current?.destroy();
+    };
+  }, []);
 
   // Bot Personalities & Banter State
   const [selectedBotId, setSelectedBotId] = useState<BotPersonalityId>('elena');
@@ -277,13 +322,23 @@ export const App: React.FC = () => {
           rating: `${bot.rating}`,
         };
       }
+      if (settings.mode === 'multiplayer') {
+        if (color === playerColor) {
+          return { name: 'You', title: undefined, rating: undefined };
+        }
+        return {
+          name: multiplayerOpponentName || 'Friend',
+          title: 'P2P',
+          rating: 'Live',
+        };
+      }
       return {
         name: color === 'w' ? 'White' : 'Black',
         title: undefined,
         rating: undefined,
       };
     },
-    [settings.mode, playerColor, selectedBotId]
+    [settings.mode, playerColor, selectedBotId, multiplayerOpponentName]
   );
 
   const archiveGame = useCallback(
@@ -529,6 +584,21 @@ export const App: React.FC = () => {
         setHistory(updatedHistory);
         setCurrentPly(updatedHistory.length);
 
+        // Broadcast move to P2P multiplayer peer
+        if (settings.mode === 'multiplayer' && multiplayerManagerRef.current && isLocalMultiplayerMoveRef.current) {
+          multiplayerManagerRef.current.send({
+            type: 'move',
+            payload: {
+              from,
+              to,
+              promotion,
+              san: move.san,
+              whiteTime,
+              blackTime,
+            },
+          });
+        }
+
         // Update Evaluation Bar
         const currentEval = evaluateBoard(chess);
         setEvalScore(currentEval);
@@ -539,7 +609,7 @@ export const App: React.FC = () => {
           setTermination(status.termination);
           setWinner(status.winner);
           setIsGameOverModalOpen(true);
-          const didPlayerWin = settings.mode === 'vs-ai' ? status.winner === playerColor : status.winner !== null;
+          const didPlayerWin = (settings.mode === 'vs-ai' || settings.mode === 'multiplayer') ? status.winner === playerColor : status.winner !== null;
           soundEngine.playGameOver(didPlayerWin);
           archiveGame(status.termination, status.winner, updatedHistory);
 
@@ -765,18 +835,36 @@ export const App: React.FC = () => {
   // Resignation
   const handleResign = () => {
     if (termination !== 'in_progress') return;
-    const resigningColor = settings.mode === 'vs-ai' ? playerColor : chess.turn();
+    const resigningColor = (settings.mode === 'vs-ai' || settings.mode === 'multiplayer') ? playerColor : chess.turn();
     const winningColor = resigningColor === 'w' ? 'b' : 'w';
     setTermination('resignation');
     setWinner(winningColor);
     setIsGameOverModalOpen(true);
-    soundEngine.playGameOver(settings.mode === 'vs-ai' ? false : true);
+    soundEngine.playGameOver(settings.mode === 'pass-and-play' ? true : false);
     archiveGame('resignation', winningColor);
+
+    if (settings.mode === 'multiplayer' && multiplayerManagerRef.current) {
+      multiplayerManagerRef.current.send({
+        type: 'resign',
+        payload: { color: playerColor },
+      });
+    }
   };
 
   // Draw Offer
   const handleDrawOffer = () => {
     if (termination !== 'in_progress') return;
+    if (settings.mode === 'multiplayer' && multiplayerManagerRef.current) {
+      multiplayerManagerRef.current.send({
+        type: 'draw_offer',
+        payload: { fromColor: playerColor },
+      });
+      setMultiplayerChatMessages((prev) => [
+        ...prev,
+        { sender: 'System', text: 'You offered a draw to your opponent.', timestamp: Date.now() },
+      ]);
+      return;
+    }
     setTermination('draw_agreement');
     setWinner(null);
     setIsGameOverModalOpen(true);
@@ -881,7 +969,8 @@ export const App: React.FC = () => {
     termination === 'in_progress' &&
     currentPly === history.length &&
     (!isAiThinking || settings.mode !== 'vs-ai') &&
-    (settings.mode !== 'vs-ai' || chess.turn() === playerColor);
+    (settings.mode !== 'vs-ai' || chess.turn() === playerColor) &&
+    (settings.mode !== 'multiplayer' || (chess.turn() === playerColor && !multiplayerDisconnected));
 
   // Top and bottom player configurations based on board orientation
   const isWhiteBottom = boardOrientation === 'w';
@@ -979,6 +1068,109 @@ export const App: React.FC = () => {
     startNewGame(lessonFen);
   }, [adaptivePrompt, startNewGame]);
 
+  const handleP2PMessage = useCallback(
+    (msg: MultiplayerMessage) => {
+      if (msg.type === 'move') {
+        const payload = msg.payload as MovePayload;
+        if (payload) {
+          isLocalMultiplayerMoveRef.current = false;
+          executeMove(payload.from, payload.to, payload.promotion);
+          isLocalMultiplayerMoveRef.current = true;
+          if (typeof payload.whiteTime === 'number') setWhiteTime(payload.whiteTime);
+          if (typeof payload.blackTime === 'number') setBlackTime(payload.blackTime);
+        }
+      } else if (msg.type === 'chat') {
+        const chat = msg.payload as ChatPayload;
+        if (chat) {
+          setMultiplayerChatMessages((prev) => [...prev, chat]);
+        }
+      } else if (msg.type === 'draw_offer') {
+        setMultiplayerDrawOffered(true);
+      } else if (msg.type === 'draw_accept') {
+        setTermination('draw_agreement');
+        setWinner(null);
+        setIsGameOverModalOpen(true);
+        soundEngine.playGameOver(false);
+        archiveGame('draw_agreement', null);
+      } else if (msg.type === 'draw_decline') {
+        setMultiplayerDrawOffered(false);
+        setMultiplayerChatMessages((prev) => [
+          ...prev,
+          { sender: 'System', text: 'Opponent declined the draw offer.', timestamp: Date.now() },
+        ]);
+      } else if (msg.type === 'resign') {
+        setTermination('resignation');
+        setWinner(playerColor);
+        setIsGameOverModalOpen(true);
+        soundEngine.playGameOver(true);
+        archiveGame('resignation', playerColor);
+      }
+    },
+    [executeMove, playerColor, archiveGame]
+  );
+
+  const handleMultiplayerGameReady = useCallback(
+    (data: {
+      manager: P2PMultiplayerManager;
+      playerColor: PieceColor;
+      timeControl: TimeControl;
+      opponentName: string;
+      isHost: boolean;
+    }) => {
+      multiplayerManagerRef.current = data.manager;
+      setMultiplayerOpponentName(data.opponentName);
+      setIsMultiplayerHost(data.isHost);
+      setMultiplayerRoomCode(data.manager.getRoomCode());
+      setMultiplayerDisconnected(false);
+      setMultiplayerDrawOffered(false);
+      setMultiplayerChatMessages([]);
+
+      data.manager['events'].onMessage = (msg: MultiplayerMessage) => {
+        handleP2PMessage(msg);
+      };
+      data.manager['events'].onStatusChange = (connStatus: ConnectionStatus) => {
+        if (connStatus === 'disconnected' || connStatus === 'error') {
+          setMultiplayerDisconnected(true);
+        }
+      };
+
+      setSettings((prev) => ({
+        ...prev,
+        mode: 'multiplayer',
+        timeControl: data.timeControl,
+        playerColorChoice: data.playerColor,
+      }));
+      setPlayerColor(data.playerColor);
+      setBoardOrientation(data.playerColor);
+      setActiveView('game');
+      startNewGame(INITIAL_FEN);
+    },
+    [handleP2PMessage, startNewGame]
+  );
+
+  const handleSendMultiplayerChat = useCallback(
+    (textToSend?: string) => {
+      const text = (textToSend || multiplayerChatDraft).trim();
+      if (!text || !multiplayerManagerRef.current) return;
+      const chat: ChatPayload = {
+        sender: 'You',
+        text,
+        timestamp: Date.now(),
+      };
+      multiplayerManagerRef.current.send({
+        type: 'chat',
+        payload: {
+          sender: isMultiplayerHost ? 'Host' : 'Guest',
+          text,
+          timestamp: Date.now(),
+        },
+      });
+      setMultiplayerChatMessages((prev) => [...prev, chat]);
+      setMultiplayerChatDraft('');
+    },
+    [multiplayerChatDraft, isMultiplayerHost]
+  );
+
   const handleStartGame = useCallback((difficulty: AiDifficulty) => {
     setSettings((current) => ({ ...current, mode: 'vs-ai', aiDifficulty: difficulty }));
     setActiveView('game');
@@ -999,6 +1191,14 @@ export const App: React.FC = () => {
           onOpenAnalysis={() => handleOpenAnalysis()}
           onOpenVisionTrainer={() => setActiveView('vision')}
           onOpenBotSelector={() => setIsBotSelectorOpen(true)}
+          onOpenSandbox={() => setActiveView('sandbox')}
+          onOpenMultiplayer={() => setIsMultiplayerModalOpen(true)}
+        />
+        <MultiplayerModal
+          isOpen={isMultiplayerModalOpen}
+          onClose={() => setIsMultiplayerModalOpen(false)}
+          onGameReady={handleMultiplayerGameReady}
+          initialRoomCode={multiplayerInitialRoom}
         />
         <BotSelectorModal
           isOpen={isBotSelectorOpen}
@@ -1038,6 +1238,30 @@ export const App: React.FC = () => {
           fen={reviewFinalFen}
         />
       </>
+    );
+  }
+
+  if (activeView === 'sandbox') {
+    return (
+      <PositionSandbox
+        onPlayVsAi={(customFen, color, difficulty) => {
+          setSettings((prev) => ({
+            ...prev,
+            mode: 'vs-ai',
+            aiDifficulty: difficulty,
+            playerColorChoice: color,
+          }));
+          setPlayerColor(color);
+          setBoardOrientation(color);
+          setActiveView('game');
+          startNewGame(customFen);
+        }}
+        onOpenAnalysis={(customFen) => {
+          handleOpenAnalysis(undefined, customFen);
+        }}
+        onExit={() => setActiveView('hub')}
+        boardTheme={settings.boardTheme}
+      />
     );
   }
 
@@ -1110,6 +1334,39 @@ export const App: React.FC = () => {
             <Compass className="h-3.5 w-3.5 text-sky-400" />
             Analysis
           </button>
+          <button
+            onClick={() => setActiveView('sandbox')}
+            className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold text-neutral-300 hover:bg-[#312e2b] hover:text-white"
+            title="Open Position Sandbox & Handicap Odds"
+          >
+            <Sparkles className="h-3.5 w-3.5 text-amber-400" />
+            Sandbox
+          </button>
+
+          {/* Multiplayer status & Chat trigger */}
+          {settings.mode === 'multiplayer' && (
+            <>
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#81b64c]/10 border border-[#81b64c]/30 text-xs font-mono text-[#92c957]">
+                <Radio className="w-3.5 h-3.5 animate-pulse text-[#81b64c]" />
+                <span>{multiplayerRoomCode || 'Multiplayer'}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsMultiplayerChatOpen((o) => !o)}
+                className="relative inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold text-neutral-300 hover:bg-[#312e2b] hover:text-white"
+                title="Open In-Game Match Chat"
+              >
+                <MessageSquare className="h-3.5 w-3.5 text-[#81b64c]" />
+                <span>Chat</span>
+                {multiplayerChatMessages.length > 0 && (
+                  <span className="w-4 h-4 rounded-full bg-[#81b64c] text-white text-[10px] font-extrabold flex items-center justify-center">
+                    {multiplayerChatMessages.length}
+                  </span>
+                )}
+              </button>
+            </>
+          )}
+
           {isAiThinking && (
             <div className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-[#81b64c]/10 border border-[#81b64c]/40 text-[#81b64c] text-xs font-semibold animate-pulse">
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1171,6 +1428,63 @@ export const App: React.FC = () => {
               materialAdvantage={topAdvantage}
             />
           </div>
+
+          {/* Multiplayer Draw Offer Alert */}
+          {settings.mode === 'multiplayer' && multiplayerDrawOffered && (
+            <div className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-amber-950/80 border border-amber-500/50 text-xs text-amber-200 animate-bounce shadow-md">
+              <div className="flex items-center gap-2 font-bold">
+                <Users className="w-4 h-4 text-amber-400" />
+                <span>{multiplayerOpponentName} offered a draw!</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    multiplayerManagerRef.current?.send({ type: 'draw_accept' });
+                    setTermination('draw_agreement');
+                    setWinner(null);
+                    setIsGameOverModalOpen(true);
+                    soundEngine.playGameOver(false);
+                    archiveGame('draw_agreement', null);
+                    setMultiplayerDrawOffered(false);
+                  }}
+                  className="px-2.5 py-1 rounded bg-[#81b64c] hover:bg-[#92c957] text-white font-bold text-[11px] transition shadow-xs"
+                >
+                  Accept
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    multiplayerManagerRef.current?.send({ type: 'draw_decline' });
+                    setMultiplayerDrawOffered(false);
+                  }}
+                  className="px-2.5 py-1 rounded bg-[#312e2b] hover:bg-[#3d3a34] text-neutral-300 font-semibold text-[11px] transition"
+                >
+                  Decline
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Multiplayer Disconnect Alert */}
+          {settings.mode === 'multiplayer' && multiplayerDisconnected && (
+            <div className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-rose-950/80 border border-rose-500/50 text-xs text-rose-200 shadow-md">
+              <div className="flex items-center gap-2 font-bold">
+                <ShieldAlert className="w-4 h-4 text-rose-400" />
+                <span>{multiplayerOpponentName} disconnected from the match.</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  multiplayerManagerRef.current?.destroy();
+                  setActiveView('hub');
+                }}
+                className="px-2.5 py-1 rounded bg-[#312e2b] hover:bg-[#3d3a34] text-white font-bold text-[11px] transition"
+              >
+                Return to Hub
+              </button>
+            </div>
+          )}
 
           {/* Threat Radar Alert Banner */}
           {settings.threatRadar && threatRadarData?.hasThreats && (
@@ -1627,6 +1941,110 @@ export const App: React.FC = () => {
         onClose={() => setIsGameArchiveOpen(false)}
         onOpenReview={handleOpenArchivedReview}
       />
+
+      {/* Multiplayer Matchmaking & Invite Modal */}
+      <MultiplayerModal
+        isOpen={isMultiplayerModalOpen}
+        onClose={() => setIsMultiplayerModalOpen(false)}
+        onGameReady={handleMultiplayerGameReady}
+        initialRoomCode={multiplayerInitialRoom}
+      />
+
+      {/* In-Game Multiplayer Chat Drawer */}
+      {isMultiplayerChatOpen && (
+        <div className="fixed bottom-4 right-4 z-50 w-80 sm:w-96 rounded-2xl bg-[#21201d] border border-[#3d3831] shadow-2xl flex flex-col overflow-hidden animate-pop-in">
+          {/* Header */}
+          <div className="p-3 bg-[#2a2824] border-b border-[#312e2b] flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs font-bold text-white">
+              <MessageSquare className="w-4 h-4 text-[#81b64c]" />
+              <span>Match Chat • {multiplayerOpponentName}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsMultiplayerChatOpen(false)}
+              className="text-neutral-400 hover:text-white p-1"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Messages list */}
+          <div className="p-3 h-52 overflow-y-auto space-y-2 text-xs flex flex-col">
+            {multiplayerChatMessages.length === 0 ? (
+              <div className="text-center text-neutral-400 my-auto text-[11px]">
+                No messages yet. Say hello or send a quick chat! 👋
+              </div>
+            ) : (
+              multiplayerChatMessages.map((msg, i) => {
+                const isMe = msg.sender === 'You';
+                const isSystem = msg.sender === 'System';
+                if (isSystem) {
+                  return (
+                    <div key={i} className="text-center text-[10px] text-amber-300/80 italic py-0.5">
+                      {msg.text}
+                    </div>
+                  );
+                }
+                return (
+                  <div
+                    key={i}
+                    className={`max-w-[80%] rounded-xl px-3 py-1.5 leading-snug ${
+                      isMe
+                        ? 'ml-auto bg-[#81b64c] text-white font-medium'
+                        : 'mr-auto bg-[#312e2b] text-neutral-200'
+                    }`}
+                  >
+                    {!isMe && (
+                      <div className="text-[10px] text-neutral-400 font-bold mb-0.5">
+                        {msg.sender}
+                      </div>
+                    )}
+                    <div>{msg.text}</div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Quick Chat Chips */}
+          <div className="px-3 py-1.5 border-t border-[#312e2b] bg-[#1a1917] flex items-center gap-1.5 overflow-x-auto text-[11px]">
+            {['Hello! 👋', 'Good luck! 🍀', 'Nice move! 🎯', 'Oops! 😅', 'Good game! 🤝'].map((quick) => (
+              <button
+                key={quick}
+                type="button"
+                onClick={() => handleSendMultiplayerChat(quick)}
+                className="px-2 py-0.5 rounded-full bg-[#2a2824] hover:bg-[#36332e] text-neutral-300 hover:text-white shrink-0 border border-[#3d3831] transition"
+              >
+                {quick}
+              </button>
+            ))}
+          </div>
+
+          {/* Input & Send */}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSendMultiplayerChat();
+            }}
+            className="p-2.5 bg-[#21201d] border-t border-[#312e2b] flex items-center gap-2"
+          >
+            <input
+              type="text"
+              value={multiplayerChatDraft}
+              onChange={(e) => setMultiplayerChatDraft(e.target.value)}
+              placeholder="Type a message..."
+              className="flex-1 px-3 py-1.5 rounded-lg bg-[#141311] border border-[#312e2b] text-xs text-white focus:outline-hidden focus:border-[#81b64c]"
+            />
+            <button
+              type="submit"
+              className="p-2 rounded-lg bg-[#81b64c] hover:bg-[#92c957] text-white transition shrink-0"
+              title="Send message"
+            >
+              <Send className="w-3.5 h-3.5" />
+            </button>
+          </form>
+        </div>
+      )}
 
       {/* Settings Modal */}
       <GameSettingsModal

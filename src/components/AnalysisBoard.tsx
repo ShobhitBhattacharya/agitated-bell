@@ -519,6 +519,18 @@ export const AnalysisBoard: React.FC<AnalysisBoardProps> = ({
                 onMove={handleMove}
                 onRequestPromotion={(from, to) => handleMove(from, to, 'q')}
                 customArrows={arrows}
+                onSquareClick={isEditorMode ? handleEditorSquareClick : undefined}
+                onFreePieceMove={
+                  isEditorMode
+                    ? (from, to) => {
+                        const p = chess.remove(from);
+                        if (p) {
+                          chess.put(p, to);
+                          setCurrentFen(chess.fen());
+                        }
+                      }
+                    : undefined
+                }
               />
             </div>
           </div>

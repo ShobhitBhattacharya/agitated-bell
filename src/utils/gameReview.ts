@@ -29,6 +29,20 @@ export interface PlyAnalysis {
   bestMoveUci?: { from: string; to: string; promotion?: string };
   bestMoveEval: number;
   explanation: string;
+  refutation?: RefutationInfo;
+}
+
+export interface RefutationInfo {
+  punishingMoveSan: string;
+  punishingMoveUci: { from: string; to: string; promotion?: string };
+  followUpMovesSan: string[];
+  explanation: string;
+}
+
+export interface PerformanceRating {
+  elo: number;
+  tier: 'Grandmaster' | 'Master' | 'Expert' | 'Club Player' | 'Intermediate' | 'Novice';
+  description: string;
 }
 
 export interface KeyMoment {
@@ -41,6 +55,7 @@ export interface KeyMoment {
   bestMoveSan: string;
   classification: MoveClassification;
   explanation: string;
+  refutation?: RefutationInfo;
 }
 
 export interface GameReviewReport {
@@ -48,6 +63,8 @@ export interface GameReviewReport {
   blackAccuracy: number;
   whiteAcpl: number;
   blackAcpl: number;
+  whitePerformance: PerformanceRating;
+  blackPerformance: PerformanceRating;
   totalPlies: number;
   classificationsCount: {
     white: Record<MoveClassification, number>;
@@ -72,6 +89,127 @@ export function calculateAccuracyFromAcpl(acpl: number): number {
   const pawns = acpl / 100;
   const raw = 103.1668 * Math.exp(-0.4354 * pawns) - 3.1669;
   return Math.round(Math.max(0, Math.min(100, raw)) * 10) / 10;
+}
+
+export function calculatePerformanceRating(
+  accuracy: number,
+  acpl: number
+): PerformanceRating {
+  let baseElo = Math.round(500 + accuracy * 20 - acpl * 3.5);
+  baseElo = Math.max(600, Math.min(2850, baseElo));
+
+  let tier: PerformanceRating['tier'] = 'Novice';
+  let description = 'Learning fundamentals and basic piece safety.';
+
+  if (baseElo >= 2400) {
+    tier = 'Grandmaster';
+    description = 'Grandmaster-grade precision and punishing tactical play.';
+  } else if (baseElo >= 2050) {
+    tier = 'Master';
+    description = 'Master-level execution with very few unforced mistakes.';
+  } else if (baseElo >= 1700) {
+    tier = 'Expert';
+    description = 'Strong tactical calculation and consistent piece coordination.';
+  } else if (baseElo >= 1300) {
+    tier = 'Club Player';
+    description = 'Solid practical play with good central control and active pieces.';
+  } else if (baseElo >= 950) {
+    tier = 'Intermediate';
+    description = 'Good opening grasp with key opportunities to tighten tactical vision.';
+  }
+
+  return { elo: baseElo, tier, description };
+}
+
+export function computeRefutation(
+  fenAfter: string,
+  blunderColor: PieceColor
+): RefutationInfo | undefined {
+  try {
+    const oppChess = new Chess(fenAfter);
+    if (oppChess.isGameOver()) {
+      if (oppChess.isCheckmate()) {
+        return {
+          punishingMoveSan: '#',
+          punishingMoveUci: { from: '', to: '' },
+          followUpMovesSan: [],
+          explanation: `${blunderColor === 'w' ? 'Black' : 'White'} delivered checkmate on the board!`,
+        };
+      }
+      return undefined;
+    }
+
+    const oppBest = getEngineBestMove(oppChess, 2);
+    if (!oppBest?.move) return undefined;
+
+    const verbose = oppChess.moves({ verbose: true });
+    const punishingMove = verbose.find(
+      (m) => m.from === oppBest.move.from && m.to === oppBest.move.to
+    );
+    if (!punishingMove) return undefined;
+
+    const punishingMoveSan = punishingMove.san;
+    const oppMoveObj = oppChess.move({
+      from: punishingMove.from,
+      to: punishingMove.to,
+      promotion: punishingMove.promotion,
+    });
+
+    const followUpMovesSan: string[] = [];
+    if (oppMoveObj && !oppChess.isGameOver()) {
+      const reply = getEngineBestMove(oppChess, 1);
+      if (reply?.move) {
+        const replyVerbose = oppChess.moves({ verbose: true });
+        const foundReply = replyVerbose.find(
+          (m) => m.from === reply.move.from && m.to === reply.move.to
+        );
+        if (foundReply) {
+          followUpMovesSan.push(foundReply.san);
+          oppChess.move({ from: foundReply.from, to: foundReply.to, promotion: foundReply.promotion });
+          const secondReply = getEngineBestMove(oppChess, 1);
+          if (secondReply?.move) {
+            const secondVerbose = oppChess.moves({ verbose: true });
+            const foundSecond = secondVerbose.find(
+              (m) => m.from === secondReply.move.from && m.to === secondReply.move.to
+            );
+            if (foundSecond) {
+              followUpMovesSan.push(foundSecond.san);
+            }
+          }
+        }
+      }
+    }
+
+    let explanation = `Opponent punishes with ${punishingMoveSan}`;
+    if (punishingMoveSan.includes('#')) {
+      explanation += `, delivering immediate checkmate!`;
+    } else if (punishingMove.captured) {
+      const capturedName =
+        punishingMove.captured === 'q'
+          ? 'Queen'
+          : punishingMove.captured === 'r'
+          ? 'Rook'
+          : punishingMove.captured === 'b'
+          ? 'Bishop'
+          : punishingMove.captured === 'n'
+          ? 'Knight'
+          : 'Pawn';
+      explanation += `, winning the undefended ${capturedName}!`;
+    } else if (punishingMoveSan.includes('+')) {
+      explanation += ` with a forcing check, gaining a decisive attack!`;
+    } else {
+      explanation += `, gaining a decisive tactical advantage.`;
+    }
+
+    return {
+      punishingMoveSan,
+      punishingMoveUci: oppBest.move,
+      followUpMovesSan,
+      explanation,
+    };
+  } catch {
+    return undefined;
+  }
 }
 
 export function classifyMove(
@@ -292,14 +430,14 @@ export function analyzeGame(
       explanation,
     };
 
-    plies.push(plyRecord);
-
-    // If inaccuracy, mistake, or blunder, add to Key Moments
+    // If inaccuracy, mistake, or blunder, compute tactical refutation and add to Key Moments
     if (
       classification === 'mistake' ||
       classification === 'blunder' ||
       classification === 'missed_win'
     ) {
+      const refutation = computeRefutation(fenAfter, color);
+      plyRecord.refutation = refutation;
       keyMoments.push({
         id: `km-${i + 1}`,
         ply: i + 1,
@@ -310,8 +448,11 @@ export function analyzeGame(
         bestMoveSan,
         classification,
         explanation,
+        refutation,
       });
     }
+
+    plies.push(plyRecord);
   }
 
   // Calculate ACPLs
@@ -330,6 +471,8 @@ export function analyzeGame(
 
   const whiteAccuracy = calculateAccuracyFromAcpl(whiteAcpl);
   const blackAccuracy = calculateAccuracyFromAcpl(blackAcpl);
+  const whitePerformance = calculatePerformanceRating(whiteAccuracy, whiteAcpl);
+  const blackPerformance = calculatePerformanceRating(blackAccuracy, blackAcpl);
 
   const advantageGraph = plies.map((p) => ({
     ply: p.ply,
@@ -345,6 +488,8 @@ export function analyzeGame(
     blackAccuracy,
     whiteAcpl,
     blackAcpl,
+    whitePerformance,
+    blackPerformance,
     totalPlies: plies.length,
     classificationsCount,
     plies,
@@ -385,6 +530,8 @@ export function analyzeGameProgressive(
       blackAccuracy: 100,
       whiteAcpl: 0,
       blackAcpl: 0,
+      whitePerformance: calculatePerformanceRating(100, 0),
+      blackPerformance: calculatePerformanceRating(100, 0),
       totalPlies: 0,
       classificationsCount: {
         white: emptyClassCounts(),
@@ -531,13 +678,13 @@ export function analyzeGameProgressive(
         explanation,
       };
 
-      plies.push(plyRecord);
-
       if (
         classification === 'mistake' ||
         classification === 'blunder' ||
         classification === 'missed_win'
       ) {
+        const refutation = computeRefutation(fenAfter, color);
+        plyRecord.refutation = refutation;
         keyMoments.push({
           id: `km-${i + 1}`,
           ply: i + 1,
@@ -548,8 +695,11 @@ export function analyzeGameProgressive(
           bestMoveSan,
           classification,
           explanation,
+          refutation,
         });
       }
+
+      plies.push(plyRecord);
     }
 
     if (isCancelled) return;
@@ -575,6 +725,8 @@ export function analyzeGameProgressive(
 
       const whiteAccuracy = calculateAccuracyFromAcpl(whiteAcpl);
       const blackAccuracy = calculateAccuracyFromAcpl(blackAcpl);
+      const whitePerformance = calculatePerformanceRating(whiteAccuracy, whiteAcpl);
+      const blackPerformance = calculatePerformanceRating(blackAccuracy, blackAcpl);
 
       const advantageGraph = plies.map((p) => ({
         ply: p.ply,
@@ -590,6 +742,8 @@ export function analyzeGameProgressive(
         blackAccuracy,
         whiteAcpl,
         blackAcpl,
+        whitePerformance,
+        blackPerformance,
         totalPlies: plies.length,
         classificationsCount,
         plies,

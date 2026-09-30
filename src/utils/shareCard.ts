@@ -3,6 +3,8 @@ export interface ShareCardData {
   blackName: string;
   whiteAccuracy?: number;
   blackAccuracy?: number;
+  whitePerformanceElo?: number;
+  blackPerformanceElo?: number;
   result: string;
   openingName?: string;
   movesCount: number;
@@ -106,10 +108,13 @@ export function renderShareCardToCanvas(
   ctx.fillStyle = '#ffffff';
   ctx.fillText(data.whiteName || 'White', 50, statsY + 30);
 
-  if (data.whiteAccuracy !== undefined) {
-    ctx.font = 'bold 14px sans-serif';
+  if (data.whiteAccuracy !== undefined || data.whitePerformanceElo !== undefined) {
+    ctx.font = 'bold 13px sans-serif';
     ctx.fillStyle = '#b2ca7c';
-    ctx.fillText(`${data.whiteAccuracy}% Accuracy`, 50, statsY + 54);
+    const text = data.whitePerformanceElo
+      ? `${data.whitePerformanceElo} ELO • ${data.whiteAccuracy}%`
+      : `${data.whiteAccuracy}% Accuracy`;
+    ctx.fillText(text, 50, statsY + 54);
   }
 
   // VS text
@@ -130,10 +135,13 @@ export function renderShareCardToCanvas(
   ctx.fillStyle = '#ffffff';
   ctx.fillText(data.blackName || 'Black', width - 50, statsY + 30);
 
-  if (data.blackAccuracy !== undefined) {
-    ctx.font = 'bold 14px sans-serif';
+  if (data.blackAccuracy !== undefined || data.blackPerformanceElo !== undefined) {
+    ctx.font = 'bold 13px sans-serif';
     ctx.fillStyle = '#f59e0b';
-    ctx.fillText(`${data.blackAccuracy}% Accuracy`, width - 50, statsY + 54);
+    const text = data.blackPerformanceElo
+      ? `${data.blackPerformanceElo} ELO • ${data.blackAccuracy}%`
+      : `${data.blackAccuracy}% Accuracy`;
+    ctx.fillText(text, width - 50, statsY + 54);
   }
 
   // Chessboard diagram

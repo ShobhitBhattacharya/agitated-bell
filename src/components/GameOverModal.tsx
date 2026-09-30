@@ -29,9 +29,10 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
   useEffect(() => {
     if (!isOpen) return;
 
-    // Trigger celebration confetti if human player won vs AI or local game
+    // Trigger celebration confetti if human player won vs AI, multiplayer, or local game
     const isHumanWinner =
-      (mode === 'vs-ai' && winner === playerColor) || (mode === 'pass-and-play' && winner !== null);
+      ((mode === 'vs-ai' || mode === 'multiplayer') && winner === playerColor) ||
+      (mode === 'pass-and-play' && winner !== null);
 
     if (isHumanWinner) {
       try {
@@ -56,7 +57,7 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
 
   if (winner) {
     const winnerName = winner === 'w' ? 'White' : 'Black';
-    if (mode === 'vs-ai') {
+    if (mode === 'vs-ai' || mode === 'multiplayer') {
       const playerWon = winner === playerColor;
       title = playerWon ? 'Victory!' : 'Defeat!';
       icon = playerWon ? (

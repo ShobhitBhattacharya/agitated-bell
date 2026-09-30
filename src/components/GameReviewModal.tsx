@@ -14,8 +14,10 @@ import {
   HelpCircle,
   Compass,
   Share2,
+  Lightbulb,
 } from 'lucide-react';
 import { Chess, Square } from 'chess.js';
+import confetti from 'canvas-confetti';
 import { ChessBoard } from './ChessBoard';
 import {
   analyzeGameProgressive,
@@ -51,6 +53,9 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
   const [isRetryingMistakes, setIsRetryingMistakes] = useState<boolean>(false);
   const [retryMomentIndex, setRetryMomentIndex] = useState<number>(0);
   const [retryFeedback, setRetryFeedback] = useState<string | null>(null);
+  const [showRefutationPly, setShowRefutationPly] = useState<number | null>(null);
+  const [retryHint, setRetryHint] = useState<string | null>(null);
+  const [showRetryRefutation, setShowRetryRefutation] = useState<boolean>(false);
 
   const [report, setReport] = useState<GameReviewReport | null>(null);
   const [analysisProgress, setAnalysisProgress] = useState<number>(0);
@@ -70,6 +75,9 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
     setIsRetryingMistakes(false);
     setRetryMomentIndex(0);
     setRetryFeedback(null);
+    setShowRefutationPly(null);
+    setRetryHint(null);
+    setShowRetryRefutation(false);
 
     const cancel = analyzeGameProgressive(
       moves,
@@ -121,6 +129,31 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
     setRetryMomentIndex(0);
     setRetryChess(new Chess(playerMistakes[0].fen));
     setRetryFeedback(null);
+    setRetryHint(null);
+    setShowRetryRefutation(false);
+  };
+
+  const handleRevealRetryHint = () => {
+    if (!retryChess || !currentRetryMoment) return;
+    const legalMoves = retryChess.moves({ verbose: true });
+    const targetMove = legalMoves.find((m) => m.san === currentRetryMoment.bestMoveSan);
+    if (targetMove) {
+      const pieceName =
+        targetMove.piece === 'p'
+          ? 'Pawn'
+          : targetMove.piece === 'n'
+          ? 'Knight'
+          : targetMove.piece === 'b'
+          ? 'Bishop'
+          : targetMove.piece === 'r'
+          ? 'Rook'
+          : targetMove.piece === 'q'
+          ? 'Queen'
+          : 'King';
+      setRetryHint(`Hint: Look for a key move with your ${pieceName} from square ${targetMove.from.toUpperCase()}!`);
+    } else {
+      setRetryHint(`Hint: Move begins on square ${currentRetryMoment.bestMoveSan.slice(0, 2).toUpperCase()}`);
+    }
   };
 
   const handleRetryMove = (from: Square, to: Square): boolean => {
@@ -133,6 +166,11 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
     if (targetMove && targetMove.from === from && targetMove.to === to) {
       retryChess.move({ from, to, promotion: targetMove.promotion || 'q' });
       setRetryFeedback('Correct! You found the theoretical best continuation.');
+      try {
+        confetti({ particleCount: 50, spread: 50, origin: { y: 0.7 } });
+      } catch {
+        // non-fatal
+      }
       return true;
     } else {
       setRetryFeedback(`Not the best move. Try again, or look for ${currentRetryMoment.bestMoveSan}.`);
@@ -146,14 +184,40 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
       setRetryMomentIndex(nextIdx);
       setRetryChess(new Chess(playerMistakes[nextIdx].fen));
       setRetryFeedback(null);
+      setRetryHint(null);
+      setShowRetryRefutation(false);
     } else {
       setIsRetryingMistakes(false);
+      try {
+        confetti({ particleCount: 90, spread: 70, origin: { y: 0.5 } });
+      } catch {
+        // non-fatal
+      }
     }
   };
 
-  if (!isOpen) return null;
-
   const currentPly = report && report.plies[activePlyIndex - 1] ? report.plies[activePlyIndex - 1] : null;
+
+  const customArrows = useMemo(() => {
+    if (isRetryingMistakes) {
+      if (showRetryRefutation && currentRetryMoment?.refutation?.punishingMoveUci) {
+        const uci = currentRetryMoment.refutation.punishingMoveUci;
+        if (uci.from && uci.to) {
+          return [{ from: uci.from as Square, to: uci.to as Square, color: 'rgba(239, 68, 68, 0.9)' }];
+        }
+      }
+      return undefined;
+    }
+    if (showRefutationPly === activePlyIndex && currentPly?.refutation?.punishingMoveUci) {
+      const uci = currentPly.refutation.punishingMoveUci;
+      if (uci.from && uci.to) {
+        return [{ from: uci.from as Square, to: uci.to as Square, color: 'rgba(239, 68, 68, 0.9)' }];
+      }
+    }
+    return undefined;
+  }, [isRetryingMistakes, showRetryRefutation, currentRetryMoment, showRefutationPly, activePlyIndex, currentPly]);
+
+  if (!isOpen) return null;
 
   // Helper for classification color and icons
   const getBadgeStyle = (cls: MoveClassification) => {
@@ -267,6 +331,15 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
                     {report.whiteAcpl} ACPL
                   </span>
                 </div>
+                {report.whitePerformance && (
+                  <div className="mt-1.5 flex items-center gap-1.5 text-xs font-bold text-[#b2ca7c]">
+                    <Award className="h-3.5 w-3.5" />
+                    <span>{report.whitePerformance.elo} ELO</span>
+                    <span className="rounded bg-[#2a3325] px-1.5 py-0.5 text-[10px] text-neutral-300 font-semibold border border-[#3b4834]">
+                      {report.whitePerformance.tier}
+                    </span>
+                  </div>
+                )}
               </div>
               <div className="h-12 w-12 rounded-full border-4 border-[#b2ca7c] flex items-center justify-center font-bold text-xs text-white bg-[#191d17]">
                 ♔
@@ -287,6 +360,15 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
                     {report.blackAcpl} ACPL
                   </span>
                 </div>
+                {report.blackPerformance && (
+                  <div className="mt-1.5 flex items-center gap-1.5 text-xs font-bold text-amber-400">
+                    <Award className="h-3.5 w-3.5" />
+                    <span>{report.blackPerformance.elo} ELO</span>
+                    <span className="rounded bg-[#2a3325] px-1.5 py-0.5 text-[10px] text-neutral-300 font-semibold border border-[#3b4834]">
+                      {report.blackPerformance.tier}
+                    </span>
+                  </div>
+                )}
               </div>
               <div className="h-12 w-12 rounded-full border-4 border-[#85907e] flex items-center justify-center font-bold text-xs text-white bg-[#191d17]">
                 ♚
@@ -362,6 +444,7 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
                   theme="chesscom"
                   interactive={false}
                   showLegalMoves={false}
+                  customArrows={customArrows}
                   onMove={() => false}
                   onRequestPromotion={() => {}}
                 />
@@ -445,6 +528,48 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
                         </span>
                       </div>
                     </div>
+
+                    {/* Interactive Show Refutation button for blunders & mistakes */}
+                    {currentPly.refutation && (
+                      <div className="pt-1">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setShowRefutationPly(showRefutationPly === currentPly.ply ? null : currentPly.ply)
+                          }
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-rose-500/40 bg-rose-950/30 px-3 py-1.5 text-xs font-bold text-rose-300 hover:bg-rose-900/40 transition cursor-pointer"
+                        >
+                          <HelpCircle className="w-3.5 h-3.5 text-rose-400" />
+                          <span>
+                            {showRefutationPly === currentPly.ply
+                              ? 'Hide Punishment'
+                              : 'Why is this a blunder? (Show Punishment)'}
+                          </span>
+                        </button>
+                        {showRefutationPly === currentPly.ply && (
+                          <div className="mt-2 rounded-lg border border-rose-600/40 bg-[#1e1517] p-3 text-xs space-y-2 animate-fadeIn">
+                            <div className="flex items-center gap-1.5 font-bold text-rose-400">
+                              <AlertTriangle className="w-4 h-4" />
+                              <span>Tactical Refutation (Arrow Drawn on Board)</span>
+                            </div>
+                            <p className="text-neutral-200 leading-relaxed">
+                              {currentPly.refutation.explanation}
+                            </p>
+                            <div className="flex items-center gap-1 text-[11px] text-neutral-400 font-mono">
+                              <span className="text-rose-400 font-bold">Opponent reply:</span>
+                              <span className="px-1.5 py-0.5 rounded bg-rose-950/80 border border-rose-700/50 text-rose-300 font-bold">
+                                {currentPly.refutation.punishingMoveSan}
+                              </span>
+                              {currentPly.refutation.followUpMovesSan.length > 0 && (
+                                <span>
+                                  {' '}then {currentPly.refutation.followUpMovesSan.join(' ')}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="rounded-xl border border-[#3b4334] bg-[#222820] p-4 text-xs text-neutral-400">
@@ -499,6 +624,7 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
                     theme="chesscom"
                     interactive={!retryFeedback?.startsWith('Correct')}
                     showLegalMoves={true}
+                    customArrows={customArrows}
                     onMove={handleRetryMove}
                     onRequestPromotion={(from, to) => handleRetryMove(from, to)}
                   />
@@ -522,6 +648,48 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
                     <p className="mt-2 text-xs text-neutral-300 leading-relaxed">
                       {currentRetryMoment.explanation} Find the best move for your side!
                     </p>
+
+                    {/* Hint & Refutation Buttons */}
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={handleRevealRetryHint}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/40 bg-amber-950/30 px-3 py-1.5 text-xs font-semibold text-amber-300 hover:bg-amber-900/40 transition cursor-pointer"
+                      >
+                        <Lightbulb className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Peek Hint</span>
+                      </button>
+
+                      {currentRetryMoment.refutation && (
+                        <button
+                          type="button"
+                          onClick={() => setShowRetryRefutation(!showRetryRefutation)}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-rose-500/40 bg-rose-950/30 px-3 py-1.5 text-xs font-semibold text-rose-300 hover:bg-rose-900/40 transition cursor-pointer"
+                        >
+                          <HelpCircle className="w-3.5 h-3.5 text-rose-400" />
+                          <span>{showRetryRefutation ? 'Hide Refutation' : 'Why did my move fail?'}</span>
+                        </button>
+                      )}
+                    </div>
+
+                    {retryHint && (
+                      <div className="mt-2 rounded-lg border border-amber-500/40 bg-amber-950/30 p-2.5 text-xs text-amber-200 animate-fadeIn">
+                        {retryHint}
+                      </div>
+                    )}
+
+                    {showRetryRefutation && currentRetryMoment.refutation && (
+                      <div className="mt-2 rounded-lg border border-rose-600/40 bg-[#1e1517] p-2.5 text-xs space-y-1 animate-fadeIn">
+                        <div className="font-bold text-rose-400 flex items-center gap-1">
+                          <AlertTriangle className="w-3.5 h-3.5" />
+                          <span>Tactical Punishment:</span>
+                        </div>
+                        <p className="text-neutral-300">{currentRetryMoment.refutation.explanation}</p>
+                        <div className="text-[11px] font-mono text-neutral-400">
+                          Opponent punishing move: <span className="text-rose-400 font-bold">{currentRetryMoment.refutation.punishingMoveSan}</span>
+                        </div>
+                      </div>
+                    )}
 
                     {retryFeedback && (
                       <div

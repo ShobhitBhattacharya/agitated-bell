@@ -3,7 +3,7 @@ import { Square, PieceSymbol, Color } from 'chess.js';
 export type PieceColor = Color;
 export type PieceType = PieceSymbol;
 
-export type GameMode = 'vs-ai' | 'pass-and-play' | 'sandbox';
+export type GameMode = 'vs-ai' | 'pass-and-play' | 'sandbox' | 'multiplayer';
 export type AiDifficulty = 'easy' | 'medium' | 'hard' | 'master';
 export type BoardTheme = 'chesscom' | 'wood' | 'slate' | 'midnight' | 'glass';
 export type PlayerColorChoice = 'w' | 'b' | 'random';

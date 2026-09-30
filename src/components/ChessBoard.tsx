@@ -21,6 +21,8 @@ interface ChessBoardProps {
   customArrows?: BoardArrow[];
   customHighlights?: Partial<Record<Square, string>>;
   enableRightClickDraw?: boolean;
+  onSquareClick?: (square: Square) => void;
+  onFreePieceMove?: (from: Square, to: Square) => void;
 }
 
 const ChessBoardComponent: React.FC<ChessBoardProps> = ({
@@ -35,6 +37,8 @@ const ChessBoardComponent: React.FC<ChessBoardProps> = ({
   customArrows,
   customHighlights,
   enableRightClickDraw = true,
+  onSquareClick,
+  onFreePieceMove,
 }) => {
   const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
   const [draggedSquare, setDraggedSquare] = useState<Square | null>(null);
@@ -85,6 +89,11 @@ const ChessBoardComponent: React.FC<ChessBoardProps> = ({
 
   // Handle square click
   const handleSquareClick = (square: Square) => {
+    if (onSquareClick) {
+      onSquareClick(square);
+      return;
+    }
+
     if (!interactive) return;
 
     const piece = chess.get(square);
@@ -135,6 +144,18 @@ const ChessBoardComponent: React.FC<ChessBoardProps> = ({
 
   // Drag and drop handlers
   const handleDragStart = (e: React.DragEvent, square: Square) => {
+    if (onFreePieceMove) {
+      const piece = chess.get(square);
+      if (!piece) {
+        e.preventDefault();
+        return;
+      }
+      setDraggedSquare(square);
+      e.dataTransfer.setData('text/plain', square);
+      e.dataTransfer.effectAllowed = 'move';
+      return;
+    }
+
     if (!interactive) {
       e.preventDefault();
       return;
@@ -162,6 +183,11 @@ const ChessBoardComponent: React.FC<ChessBoardProps> = ({
     setDraggedSquare(null);
 
     if (!fromSquare || fromSquare === targetSquare) return;
+
+    if (onFreePieceMove) {
+      onFreePieceMove(fromSquare, targetSquare);
+      return;
+    }
 
     // Check legality
     const moves = chess.moves({ square: fromSquare, verbose: true });
@@ -341,10 +367,10 @@ const ChessBoardComponent: React.FC<ChessBoardProps> = ({
               {/* Piece Rendering */}
               {piece && (
                 <div
-                  draggable={interactive && piece.color === chess.turn()}
+                  draggable={(interactive && piece.color === chess.turn()) || !!onFreePieceMove}
                   onDragStart={(e) => handleDragStart(e, square)}
                   className={`w-[86%] h-[86%] flex items-center justify-center z-5 transition-transform duration-100 ${
-                    interactive && piece.color === chess.turn()
+                    (interactive && piece.color === chess.turn()) || !!onFreePieceMove
                       ? 'cursor-grab active:cursor-grabbing hover:scale-105'
                       : ''
                   }`}

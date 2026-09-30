@@ -15,6 +15,8 @@ import {
   Compass,
   Target,
   Bot,
+  Users,
+  Sparkles,
 } from 'lucide-react';
 import { AiDifficulty } from '../types/chess';
 
@@ -26,6 +28,8 @@ interface LearningHubProps {
   onOpenAnalysis?: () => void;
   onOpenVisionTrainer?: () => void;
   onOpenBotSelector?: () => void;
+  onOpenSandbox?: () => void;
+  onOpenMultiplayer?: () => void;
 }
 
 const opponents: { difficulty: AiDifficulty; name: string; elo: number; style: string; color: string }[] = [
@@ -49,6 +53,8 @@ export const LearningHub: React.FC<LearningHubProps> = ({
   onOpenAnalysis,
   onOpenVisionTrainer,
   onOpenBotSelector,
+  onOpenSandbox,
+  onOpenMultiplayer,
 }) => {
   const [selectedRushRating, setSelectedRushRating] = useState(800);
 
@@ -66,6 +72,26 @@ export const LearningHub: React.FC<LearningHubProps> = ({
             </div>
           </div>
           <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-end">
+            {onOpenMultiplayer && (
+              <button
+                type="button"
+                onClick={onOpenMultiplayer}
+                className="inline-flex items-center gap-1.5 rounded-md border border-[#81b64c]/40 bg-[#81b64c]/20 px-3 py-1.5 text-xs font-bold text-[#92c957] hover:bg-[#81b64c]/30 transition shadow-xs"
+              >
+                <Users className="h-3.5 w-3.5" />
+                <span>Play Friend</span>
+              </button>
+            )}
+            {onOpenSandbox && (
+              <button
+                type="button"
+                onClick={onOpenSandbox}
+                className="inline-flex items-center gap-1.5 rounded-md border border-amber-600/40 bg-amber-950/30 px-3 py-1.5 text-xs font-bold text-amber-300 hover:bg-amber-900/40 transition shadow-xs"
+              >
+                <Sparkles className="h-3.5 w-3.5 text-amber-400" />
+                <span>Board Sandbox</span>
+              </button>
+            )}
             {onOpenVisionTrainer && (
               <button
                 type="button"
@@ -225,7 +251,7 @@ export const LearningHub: React.FC<LearningHubProps> = ({
             </div>
             <GraduationCap className="h-6 w-6 text-[#7f8d72]" />
           </div>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <button
               type="button"
               onClick={() => onOpenLibrary('openings')}
@@ -254,6 +280,42 @@ export const LearningHub: React.FC<LearningHubProps> = ({
               </span>
               <ArrowRight className="h-4 w-4 shrink-0 text-[#aeb5a5] transition group-hover:translate-x-1" />
             </button>
+            {onOpenSandbox && (
+              <button
+                type="button"
+                onClick={onOpenSandbox}
+                className="group flex items-center justify-between gap-4 rounded-lg border border-[#373d35] bg-[#222720] p-5 text-left transition hover:border-amber-500/60 hover:bg-[#282720]"
+              >
+                <span className="flex items-start gap-4">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-amber-950/60 border border-amber-600/30 text-amber-400">
+                    <Sparkles className="h-5 w-5" />
+                  </span>
+                  <span>
+                    <span className="block text-base font-bold text-white">Board Sandbox & Odds</span>
+                    <span className="mt-1 block text-sm text-[#aeb5a5]">Piece palette, Knight/Rook handicap, & drills.</span>
+                  </span>
+                </span>
+                <ArrowRight className="h-4 w-4 shrink-0 text-[#aeb5a5] transition group-hover:translate-x-1" />
+              </button>
+            )}
+            {onOpenMultiplayer && (
+              <button
+                type="button"
+                onClick={onOpenMultiplayer}
+                className="group flex items-center justify-between gap-4 rounded-lg border border-[#373d35] bg-[#222720] p-5 text-left transition hover:border-[#81b64c]/60 hover:bg-[#202720]"
+              >
+                <span className="flex items-start gap-4">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-[#81b64c]/20 border border-[#81b64c]/30 text-[#92c957]">
+                    <Users className="h-5 w-5" />
+                  </span>
+                  <span>
+                    <span className="block text-base font-bold text-white">Play with a Friend</span>
+                    <span className="mt-1 block text-sm text-[#aeb5a5]">Live P2P room code matches • Zero backend lag.</span>
+                  </span>
+                </span>
+                <ArrowRight className="h-4 w-4 shrink-0 text-[#aeb5a5] transition group-hover:translate-x-1" />
+              </button>
+            )}
             {onOpenAnalysis && (
               <button
                 type="button"
@@ -266,7 +328,7 @@ export const LearningHub: React.FC<LearningHubProps> = ({
                   </span>
                   <span>
                     <span className="block text-base font-bold text-white">Analysis Sandbox</span>
-                    <span className="mt-1 block text-sm text-[#aeb5a5]">Setup custom positions, PGN import, & engine lines.</span>
+                    <span className="mt-1 block text-sm text-[#aeb5a5]">Deep engine minimax eval & PGN import.</span>
                   </span>
                 </span>
                 <ArrowRight className="h-4 w-4 shrink-0 text-[#aeb5a5] transition group-hover:translate-x-1" />

@@ -9,6 +9,8 @@ export interface SocialShareModalProps {
   blackName: string;
   whiteAccuracy?: number;
   blackAccuracy?: number;
+  whitePerformanceElo?: number;
+  blackPerformanceElo?: number;
   result: string;
   openingName?: string;
   movesCount: number;
@@ -22,6 +24,8 @@ export const SocialShareModal: React.FC<SocialShareModalProps> = ({
   blackName,
   whiteAccuracy,
   blackAccuracy,
+  whitePerformanceElo,
+  blackPerformanceElo,
   result,
   openingName,
   movesCount,
@@ -39,12 +43,14 @@ export const SocialShareModal: React.FC<SocialShareModalProps> = ({
       blackName,
       whiteAccuracy,
       blackAccuracy,
+      whitePerformanceElo,
+      blackPerformanceElo,
       result,
       openingName,
       movesCount,
       fen,
     });
-  }, [isOpen, whiteName, blackName, whiteAccuracy, blackAccuracy, result, openingName, movesCount, fen]);
+  }, [isOpen, whiteName, blackName, whiteAccuracy, blackAccuracy, whitePerformanceElo, blackPerformanceElo, result, openingName, movesCount, fen]);
 
   if (!isOpen) return null;
 
