@@ -8,7 +8,7 @@ interface EvaluationBarProps {
   orientation?: PieceColor; // 'w' means White on bottom
 }
 
-export const EvaluationBar: React.FC<EvaluationBarProps> = ({
+export const EvaluationBar: React.FC<EvaluationBarProps> = React.memo(({
   score,
   isCheckmate = false,
   winner = null,
@@ -85,4 +85,4 @@ export const EvaluationBar: React.FC<EvaluationBarProps> = ({
       </div>
     </div>
   );
-};
+});

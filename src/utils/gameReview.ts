@@ -352,3 +352,262 @@ export function analyzeGame(
     advantageGraph,
   };
 }
+
+/**
+ * Asynchronously and progressively analyzes a game in small batches (3 plies per tick)
+ * to keep the browser responsive, render smooth progress indicators, and avoid blocking the main thread.
+ * Returns a cancel callback function to abort analysis early if modal is closed.
+ */
+export function analyzeGameProgressive(
+  moves: string[] | Array<{ from: string; to: string; san: string; promotion?: string }>,
+  onProgress: (progress: number) => void,
+  onComplete: (report: GameReviewReport) => void,
+  initialFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
+): () => void {
+  let isCancelled = false;
+  let timerId: ReturnType<typeof setTimeout> | null = null;
+
+  const emptyClassCounts = (): Record<MoveClassification, number> => ({
+    brilliant: 0,
+    great: 0,
+    best: 0,
+    good: 0,
+    inaccuracy: 0,
+    mistake: 0,
+    blunder: 0,
+    missed_win: 0,
+  });
+
+  if (!moves || moves.length === 0) {
+    onProgress(100);
+    onComplete({
+      whiteAccuracy: 100,
+      blackAccuracy: 100,
+      whiteAcpl: 0,
+      blackAcpl: 0,
+      totalPlies: 0,
+      classificationsCount: {
+        white: emptyClassCounts(),
+        black: emptyClassCounts(),
+      },
+      plies: [],
+      keyMoments: [],
+      advantageGraph: [],
+    });
+    return () => {};
+  }
+
+  const chess = new Chess(initialFen);
+  const plies: PlyAnalysis[] = [];
+  const whiteCpls: number[] = [];
+  const blackCpls: number[] = [];
+
+  const classificationsCount = {
+    white: emptyClassCounts(),
+    black: emptyClassCounts(),
+  };
+
+  const keyMoments: KeyMoment[] = [];
+  let currentIndex = 0;
+  const CHUNK_SIZE = 3;
+
+  function processChunk() {
+    if (isCancelled) return;
+
+    const limit = Math.min(currentIndex + CHUNK_SIZE, moves.length);
+    for (; currentIndex < limit; currentIndex++) {
+      const i = currentIndex;
+      const rawMove = moves[i];
+      const fenBefore = chess.fen();
+      const color = chess.turn();
+      const moveNumber = Math.floor(i / 2) + 1;
+
+      // Evaluate position before move
+      const evalBefore = evaluateBoard(chess);
+
+      // Deterministic depth 2 search for engine best move
+      const bestMoveRes = getEngineBestMove(chess, 2);
+      const bestMoveUci = bestMoveRes?.move;
+      const bestMoveEval = bestMoveRes?.score ?? evalBefore;
+
+      let bestMoveSan = '';
+      if (bestMoveUci) {
+        try {
+          const legal = chess.moves({ verbose: true });
+          const found = legal.find(
+            (m) => m.from === bestMoveUci.from && m.to === bestMoveUci.to
+          );
+          bestMoveSan = found ? found.san : `${bestMoveUci.from}-${bestMoveUci.to}`;
+        } catch {
+          bestMoveSan = `${bestMoveUci.from}-${bestMoveUci.to}`;
+        }
+      }
+
+      let playedMoveObj;
+      if (typeof rawMove === 'string') {
+        playedMoveObj = chess.move(rawMove);
+      } else {
+        playedMoveObj = chess.move({
+          from: rawMove.from as Square,
+          to: rawMove.to as Square,
+          promotion: rawMove.promotion,
+        });
+      }
+
+      if (!playedMoveObj) {
+        break;
+      }
+
+      const fenAfter = chess.fen();
+      let evalAfter = evaluatePositionDeep(chess, 1);
+      if (chess.isCheckmate()) {
+        evalAfter = color === 'w' ? 10000 : -10000;
+      }
+
+      const isTopEngineMove =
+        bestMoveUci !== undefined &&
+        playedMoveObj.from === bestMoveUci.from &&
+        playedMoveObj.to === bestMoveUci.to &&
+        (!bestMoveUci.promotion || playedMoveObj.promotion === bestMoveUci.promotion);
+
+      let cpl = 0;
+      let evalDelta = 0;
+      if (chess.isCheckmate() || isTopEngineMove) {
+        cpl = 0;
+        evalDelta = color === 'w' ? evalAfter - evalBefore : evalBefore - evalAfter;
+      } else if (color === 'w') {
+        cpl = Math.max(0, bestMoveEval - evalAfter);
+        evalDelta = evalAfter - evalBefore;
+      } else {
+        cpl = Math.max(0, evalAfter - bestMoveEval);
+        evalDelta = evalBefore - evalAfter;
+      }
+
+      const clampedCpl = Math.min(1000, cpl);
+
+      if (color === 'w') {
+        whiteCpls.push(clampedCpl);
+      } else {
+        blackCpls.push(clampedCpl);
+      }
+
+      const isWinningBefore =
+        color === 'w' ? evalBefore > 350 : evalBefore < -350;
+      const isEqualAfter = Math.abs(evalAfter) < 120;
+      const isSacrifice =
+        playedMoveObj.captured !== undefined &&
+        ['q', 'r', 'b', 'n'].includes(playedMoveObj.piece);
+
+      const { classification, explanation } = classifyMove(
+        clampedCpl,
+        isWinningBefore,
+        isEqualAfter,
+        isSacrifice,
+        evalDelta
+      );
+
+      if (color === 'w') {
+        classificationsCount.white[classification]++;
+      } else {
+        classificationsCount.black[classification]++;
+      }
+
+      const plyRecord: PlyAnalysis = {
+        ply: i + 1,
+        moveNumber,
+        color,
+        san: playedMoveObj.san,
+        from: playedMoveObj.from,
+        to: playedMoveObj.to,
+        fenBefore,
+        fenAfter,
+        evalBefore,
+        evalAfter,
+        cpl: clampedCpl,
+        classification,
+        bestMoveSan,
+        bestMoveUci,
+        bestMoveEval,
+        explanation,
+      };
+
+      plies.push(plyRecord);
+
+      if (
+        classification === 'mistake' ||
+        classification === 'blunder' ||
+        classification === 'missed_win'
+      ) {
+        keyMoments.push({
+          id: `km-${i + 1}`,
+          ply: i + 1,
+          moveNumber,
+          color,
+          fen: fenBefore,
+          playedMoveSan: playedMoveObj.san,
+          bestMoveSan,
+          classification,
+          explanation,
+        });
+      }
+    }
+
+    if (isCancelled) return;
+
+    const progressPct = moves.length > 0 ? Math.round((currentIndex / moves.length) * 100) : 100;
+    onProgress(progressPct);
+
+    if (currentIndex < moves.length) {
+      timerId = setTimeout(processChunk, 0);
+    } else {
+      const whiteAcpl =
+        whiteCpls.length > 0
+          ? Math.round(
+              (whiteCpls.reduce((acc, v) => acc + v, 0) / whiteCpls.length) * 10
+            ) / 10
+          : 0;
+      const blackAcpl =
+        blackCpls.length > 0
+          ? Math.round(
+              (blackCpls.reduce((acc, v) => acc + v, 0) / blackCpls.length) * 10
+            ) / 10
+          : 0;
+
+      const whiteAccuracy = calculateAccuracyFromAcpl(whiteAcpl);
+      const blackAccuracy = calculateAccuracyFromAcpl(blackAcpl);
+
+      const advantageGraph = plies.map((p) => ({
+        ply: p.ply,
+        moveNumber: p.moveNumber,
+        score: p.evalAfter,
+        color: p.color,
+        san: p.san,
+        classification: p.classification,
+      }));
+
+      const report: GameReviewReport = {
+        whiteAccuracy,
+        blackAccuracy,
+        whiteAcpl,
+        blackAcpl,
+        totalPlies: plies.length,
+        classificationsCount,
+        plies,
+        keyMoments,
+        advantageGraph,
+      };
+
+      onComplete(report);
+    }
+  }
+
+  // Defer initial chunk so caller can finish mount/render cycle
+  timerId = setTimeout(processChunk, 0);
+
+  return () => {
+    isCancelled = true;
+    if (timerId !== null) {
+      clearTimeout(timerId);
+    }
+  };
+}

@@ -220,7 +220,7 @@ export function getBestMove(chess: Chess, difficulty: AiDifficulty): BestMoveRes
     easy: 1,
     medium: 3,
     hard: 4,
-    master: 5,
+    master: 4,
   };
 
   const depth = depthMap[difficulty] || 3;

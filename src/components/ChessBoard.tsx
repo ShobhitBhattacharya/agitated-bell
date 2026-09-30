@@ -23,7 +23,7 @@ interface ChessBoardProps {
   enableRightClickDraw?: boolean;
 }
 
-export const ChessBoard: React.FC<ChessBoardProps> = ({
+const ChessBoardComponent: React.FC<ChessBoardProps> = ({
   chess,
   orientation,
   theme,
@@ -459,3 +459,21 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
     </div>
   );
 };
+
+export const ChessBoard = React.memo(ChessBoardComponent, (prevProps, nextProps) => {
+  if (prevProps.chess.fen() !== nextProps.chess.fen()) return false;
+  if (prevProps.orientation !== nextProps.orientation) return false;
+  if (prevProps.theme !== nextProps.theme) return false;
+  if (prevProps.interactive !== nextProps.interactive) return false;
+  if (prevProps.showLegalMoves !== nextProps.showLegalMoves) return false;
+  if (prevProps.enableRightClickDraw !== nextProps.enableRightClickDraw) return false;
+
+  const prevLast = prevProps.lastMove;
+  const nextLast = nextProps.lastMove;
+  if (prevLast?.from !== nextLast?.from || prevLast?.to !== nextLast?.to) return false;
+
+  if (prevProps.customArrows !== nextProps.customArrows) return false;
+  if (prevProps.customHighlights !== nextProps.customHighlights) return false;
+
+  return true;
+});

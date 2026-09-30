@@ -398,11 +398,16 @@ export const App: React.FC = () => {
           const testMove = testChess.move({ from, to, promotion: promotion || 'q' });
           if (testMove) {
             const oppMoves = testChess.moves({ verbose: true });
-            const mateIn1 = oppMoves.some((m) => {
-              const mateTest = new Chess(testChess.fen());
-              mateTest.move(m);
-              return mateTest.isCheckmate();
-            });
+            let mateIn1 = false;
+            for (const om of oppMoves) {
+              testChess.move(om);
+              if (testChess.isCheckmate()) {
+                mateIn1 = true;
+                testChess.undo();
+                break;
+              }
+              testChess.undo();
+            }
 
             let blunderMsg: string | null = null;
             if (mateIn1) {
@@ -595,15 +600,17 @@ export const App: React.FC = () => {
           requestIdRef.current += 1;
           workerRef.current?.terminate();
           workerRef.current = null;
-          const res = getBestMove(chess, settings.aiDifficulty);
+          const fallbackDifficulty: AiDifficulty = settings.aiDifficulty === 'master' ? 'medium' : settings.aiDifficulty;
+          const res = getBestMove(chess, fallbackDifficulty);
           setIsAiThinking(false);
           if (res) {
             executeMoveRef.current(res.move.from, res.move.to, res.move.promotion as PieceType);
           }
         }, 5000);
       } else {
-        // Fallback synchronous
-        const res = getBestMove(chess, settings.aiDifficulty);
+        // Fallback synchronous (capped to prevent main thread blocking)
+        const fallbackDifficulty: AiDifficulty = settings.aiDifficulty === 'master' ? 'medium' : settings.aiDifficulty;
+        const res = getBestMove(chess, fallbackDifficulty);
         setIsAiThinking(false);
         if (res) {
           executeMoveRef.current(res.move.from, res.move.to, res.move.promotion as PieceType);

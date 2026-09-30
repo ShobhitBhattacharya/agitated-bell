@@ -114,50 +114,105 @@ export const AnalysisBoard: React.FC<AnalysisBoardProps> = ({
   // Engine Suggestion State
   const [showEngineArrow, setShowEngineArrow] = useState<boolean>(true);
 
-  // Engine evaluation calculation
-  const engineAnalysis = useMemo(() => {
+  // Engine evaluation calculation (debounced and async to eliminate 200-400ms piece placement lag)
+  interface EngineAnalysisResult {
+    score: number;
+    bestMove: { from: string; to: string; promotion?: string } | null;
+    bestMoveSan: string;
+    explanation: string;
+    isCalculating?: boolean;
+  }
+
+  const [engineAnalysis, setEngineAnalysis] = useState<EngineAnalysisResult>(() => {
+    const tempChess = new Chess(currentFen);
+    let initialScore = 0;
+    if (tempChess.isGameOver()) {
+      if (tempChess.isCheckmate()) {
+        initialScore = tempChess.turn() === 'w' ? -10000 : 10000;
+      }
+    } else {
+      initialScore = evaluateBoard(tempChess);
+    }
+    return {
+      score: initialScore,
+      bestMove: null,
+      bestMoveSan: '',
+      explanation: tempChess.isGameOver()
+        ? (tempChess.isCheckmate()
+          ? `Checkmate! ${tempChess.turn() === 'w' ? 'Black' : 'White'} wins.`
+          : 'Game ended in a draw.')
+        : `Position evaluation: ${initialScore > 0 ? '+' : ''}${(initialScore / 100).toFixed(1)}.`,
+      isCalculating: false,
+    };
+  });
+
+  useEffect(() => {
     const tempChess = new Chess(currentFen);
     if (tempChess.isGameOver()) {
       let score = 0;
       if (tempChess.isCheckmate()) {
         score = tempChess.turn() === 'w' ? -10000 : 10000;
       }
-      return {
+      setEngineAnalysis({
         score,
         bestMove: null,
         bestMoveSan: '',
         explanation: tempChess.isCheckmate()
           ? `Checkmate! ${tempChess.turn() === 'w' ? 'Black' : 'White'} wins.`
           : 'Game ended in a draw.',
-      };
+        isCalculating: false,
+      });
+      return;
     }
 
-    const best = getEngineBestMove(tempChess, 3);
-    const score = evaluatePositionDeep(tempChess, 2);
+    // Quick static score immediately so eval bar updates with zero lag
+    const quickScore = evaluateBoard(tempChess);
+    setEngineAnalysis((prev) => ({
+      ...prev,
+      score: quickScore,
+      isCalculating: true,
+    }));
 
-    let bestMoveSan = '';
-    if (best?.move) {
+    // Debounce deep depth-3 minimax and depth-2 search by 120ms
+    // so piece drops, drags, and arrow key scrubbing remain at 60 FPS
+    const timer = setTimeout(() => {
       try {
-        const legal = tempChess.moves({ verbose: true });
-        const found = legal.find((m) => m.from === best.move.from && m.to === best.move.to);
-        bestMoveSan = found ? found.san : `${best.move.from}-${best.move.to}`;
+        const evalChess = new Chess(currentFen);
+        if (evalChess.isGameOver()) return;
+
+        const best = getEngineBestMove(evalChess, 3);
+        const score = evaluatePositionDeep(evalChess, 2);
+
+        let bestMoveSan = '';
+        if (best?.move) {
+          try {
+            const legal = evalChess.moves({ verbose: true });
+            const found = legal.find((m) => m.from === best.move.from && m.to === best.move.to);
+            bestMoveSan = found ? found.san : `${best.move.from}-${best.move.to}`;
+          } catch {
+            bestMoveSan = `${best.move.from}-${best.move.to}`;
+          }
+        }
+
+        const turnName = evalChess.turn() === 'w' ? 'White' : 'Black';
+        let explanation = `Position evaluation: ${score > 0 ? '+' : ''}${(score / 100).toFixed(1)}.`;
+        if (bestMoveSan) {
+          explanation += ` Engine suggests ${bestMoveSan} for ${turnName}.`;
+        }
+
+        setEngineAnalysis({
+          score,
+          bestMove: best?.move ?? null,
+          bestMoveSan,
+          explanation,
+          isCalculating: false,
+        });
       } catch {
-        bestMoveSan = `${best.move.from}-${best.move.to}`;
+        setEngineAnalysis((prev) => ({ ...prev, isCalculating: false }));
       }
-    }
+    }, 120);
 
-    const turnName = tempChess.turn() === 'w' ? 'White' : 'Black';
-    let explanation = `Position evaluation: ${score > 0 ? '+' : ''}${(score / 100).toFixed(1)}.`;
-    if (bestMoveSan) {
-      explanation += ` Engine suggests ${bestMoveSan} for ${turnName}.`;
-    }
-
-    return {
-      score,
-      bestMove: best?.move ?? null,
-      bestMoveSan,
-      explanation,
-    };
+    return () => clearTimeout(timer);
   }, [currentFen]);
 
   // Sync to target ply
@@ -624,10 +679,15 @@ export const AnalysisBoard: React.FC<AnalysisBoardProps> = ({
           <div className="p-4 rounded-2xl bg-[#21201d] border border-[#312e2b] space-y-3 shadow-lg">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <Brain className="w-4 h-4 text-[#3b82f6]" />
+                <Brain className={`w-4 h-4 ${engineAnalysis.isCalculating ? 'text-amber-400 animate-pulse' : 'text-[#3b82f6]'}`} />
                 <span className="text-xs font-extrabold text-white tracking-wide uppercase">
                   Engine Evaluation
                 </span>
+                {engineAnalysis.isCalculating && (
+                  <span className="text-[10px] text-amber-400 font-semibold animate-pulse">
+                    evaluating...
+                  </span>
+                )}
               </div>
               <div className="flex items-center space-x-2">
                 <label className="flex items-center gap-1.5 text-[11px] text-neutral-400 cursor-pointer select-none">

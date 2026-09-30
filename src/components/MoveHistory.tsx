@@ -19,7 +19,7 @@ interface MoveHistoryProps {
   copiedType: 'pgn' | 'fen' | null;
 }
 
-export const MoveHistory: React.FC<MoveHistoryProps> = ({
+export const MoveHistory: React.FC<MoveHistoryProps> = React.memo(({
   history,
   currentPly,
   onSelectPly,
@@ -182,4 +182,4 @@ export const MoveHistory: React.FC<MoveHistoryProps> = ({
       </div>
     </div>
   );
-};
+});

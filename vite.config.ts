@@ -9,4 +9,16 @@ export default defineConfig({
     port: 3000,
     open: false,
   },
+  build: {
+    chunkSizeWarningLimit: 800,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom'],
+          'vendor-chess': ['chess.js'],
+          'vendor-icons': ['lucide-react', 'canvas-confetti'],
+        },
+      },
+    },
+  },
 });

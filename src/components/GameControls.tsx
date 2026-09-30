@@ -25,7 +25,7 @@ interface GameControlsProps {
   onOpenSettings: () => void;
 }
 
-export const GameControls: React.FC<GameControlsProps> = ({
+export const GameControls: React.FC<GameControlsProps> = React.memo(({
   canUndo,
   canRedo,
   soundEnabled,
@@ -171,4 +171,4 @@ export const GameControls: React.FC<GameControlsProps> = ({
       </div>
     </div>
   );
-};
+});

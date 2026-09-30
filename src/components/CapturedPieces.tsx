@@ -17,7 +17,7 @@ const PIECE_SORT_ORDER: Record<PieceType, number> = {
   k: 6,
 };
 
-export const CapturedPieces: React.FC<CapturedPiecesProps> = ({
+export const CapturedPieces: React.FC<CapturedPiecesProps> = React.memo(({
   captured,
   opponentColor,
   materialAdvantage,
@@ -48,4 +48,4 @@ export const CapturedPieces: React.FC<CapturedPiecesProps> = ({
       )}
     </div>
   );
-};
+});

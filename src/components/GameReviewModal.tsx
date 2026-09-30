@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   X,
   Trophy,
@@ -18,7 +18,7 @@ import {
 import { Chess, Square } from 'chess.js';
 import { ChessBoard } from './ChessBoard';
 import {
-  analyzeGame,
+  analyzeGameProgressive,
   GameReviewReport,
   MoveClassification,
 } from '../utils/gameReview';
@@ -52,10 +52,38 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
   const [retryMomentIndex, setRetryMomentIndex] = useState<number>(0);
   const [retryFeedback, setRetryFeedback] = useState<string | null>(null);
 
-  // Compute full game review report
-  const report: GameReviewReport = useMemo(() => {
-    return analyzeGame(moves);
-  }, [moves]);
+  const [report, setReport] = useState<GameReviewReport | null>(null);
+  const [analysisProgress, setAnalysisProgress] = useState<number>(0);
+  const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setReport(null);
+      setAnalysisProgress(0);
+      setIsAnalyzing(false);
+      return;
+    }
+
+    setIsAnalyzing(true);
+    setAnalysisProgress(0);
+    setActivePlyIndex(0);
+    setIsRetryingMistakes(false);
+    setRetryMomentIndex(0);
+    setRetryFeedback(null);
+
+    const cancel = analyzeGameProgressive(
+      moves,
+      (pct) => setAnalysisProgress(pct),
+      (completedReport) => {
+        setReport(completedReport);
+        setIsAnalyzing(false);
+      }
+    );
+
+    return () => {
+      cancel();
+    };
+  }, [isOpen, moves]);
 
   // Chess instance for current ply replay
   const currentChess = useMemo(() => {
@@ -68,19 +96,24 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
 
   // Mistakes for the player to retry
   const playerMistakes = useMemo(() => {
+    if (!report) return [];
     return report.keyMoments.filter((km) => km.color === playerColor);
-  }, [report.keyMoments, playerColor]);
+  }, [report, playerColor]);
 
   // Current retry moment
   const currentRetryMoment = playerMistakes[retryMomentIndex] ?? null;
 
   // Chess instance for retry mode
-  const [retryChess, setRetryChess] = useState<Chess | null>(() => {
+  const [retryChess, setRetryChess] = useState<Chess | null>(null);
+
+  useEffect(() => {
     if (playerMistakes.length > 0) {
-      return new Chess(playerMistakes[0].fen);
+      setRetryChess(new Chess(playerMistakes[0].fen));
+      setRetryMomentIndex(0);
+    } else {
+      setRetryChess(null);
     }
-    return null;
-  });
+  }, [playerMistakes]);
 
   const handleStartRetry = () => {
     if (playerMistakes.length === 0) return;
@@ -120,7 +153,7 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
 
   if (!isOpen) return null;
 
-  const currentPly = report.plies[activePlyIndex - 1] ?? null;
+  const currentPly = report && report.plies[activePlyIndex - 1] ? report.plies[activePlyIndex - 1] : null;
 
   // Helper for classification color and icons
   const getBadgeStyle = (cls: MoveClassification) => {
@@ -194,7 +227,30 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+        {isAnalyzing || !report ? (
+          <div className="flex-1 flex flex-col items-center justify-center p-8 sm:p-12 text-center my-auto min-h-[380px]">
+            <div className="relative mb-6">
+              <div className="h-16 w-16 rounded-2xl bg-gradient-to-tr from-[#2d3826] to-[#405036] border border-[#526645] flex items-center justify-center shadow-lg">
+                <Sparkles className="h-8 w-8 text-[#b2ca7c] animate-spin" style={{ animationDuration: '4s' }} />
+              </div>
+            </div>
+            <h3 className="text-lg font-bold text-white mb-2">Analyzing Game with Engine</h3>
+            <p className="text-sm text-neutral-400 max-w-md mb-6">
+              Evaluating centipawn loss, uncovering brilliant moves, and identifying critical turning points...
+            </p>
+            <div className="w-full max-w-md bg-[#131711] rounded-full h-3.5 p-0.5 border border-[#374032] overflow-hidden mb-3">
+              <div
+                className="h-full bg-gradient-to-r from-[#8ba752] to-[#b2ca7c] rounded-full transition-all duration-150"
+                style={{ width: `${analysisProgress}%` }}
+              />
+            </div>
+            <div className="flex items-center justify-between w-full max-w-md text-xs font-semibold text-neutral-400">
+              <span>{Math.round((analysisProgress / 100) * moves.length)} / {moves.length} moves evaluated</span>
+              <span className="text-[#b2ca7c] font-bold text-sm">{analysisProgress}%</span>
+            </div>
+          </div>
+        ) : (
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
           {/* Accuracy Score Banner */}
           <div className="grid grid-cols-2 gap-4 rounded-xl border border-[#374032] bg-[#222820] p-4 sm:p-5">
             {/* White Player */}
@@ -513,6 +569,7 @@ export const GameReviewModal: React.FC<GameReviewModalProps> = ({
             )
           )}
         </div>
+        )}
       </div>
     </div>
   );

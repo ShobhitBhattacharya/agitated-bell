@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   analyzeGame,
+  analyzeGameProgressive,
   calculateAccuracyFromAcpl,
   classifyMove,
+  GameReviewReport,
   MoveClassification,
 } from '../utils/gameReview';
 
@@ -80,4 +82,42 @@ describe('Game Review Engine', () => {
       expect(report.keyMoments).toHaveLength(0);
     });
   });
+
+  describe('analyzeGameProgressive', () => {
+    it('progressively yields updates and resolves report asynchronously', async () => {
+      const scholarsMate = ['e4', 'e5', 'Bc4', 'Nc6', 'Qh5', 'Nf6', 'Qxf7#'];
+      const progressUpdates: number[] = [];
+
+      const report = await new Promise<GameReviewReport>((resolve) => {
+        analyzeGameProgressive(
+          scholarsMate,
+          (pct) => progressUpdates.push(pct),
+          (rep) => resolve(rep)
+        );
+      });
+
+      expect(progressUpdates.length).toBeGreaterThan(0);
+      expect(progressUpdates[progressUpdates.length - 1]).toBe(100);
+      expect(report.totalPlies).toBe(7);
+      expect(report.whiteAccuracy).toBeGreaterThan(report.blackAccuracy);
+    });
+
+    it('cancels analysis gracefully when cancel is invoked', async () => {
+      const longMoves = ['e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'a6', 'Ba4', 'Nf6'];
+      let completed = false;
+
+      const cancel = analyzeGameProgressive(
+        longMoves,
+        () => {},
+        () => {
+          completed = true;
+        }
+      );
+      cancel();
+
+      await new Promise((r) => setTimeout(r, 50));
+      expect(completed).toBe(false);
+    });
+  });
 });
+
