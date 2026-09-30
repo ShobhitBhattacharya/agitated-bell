@@ -53,6 +53,8 @@ export interface GameSettings {
   showEvaluationBar: boolean;
   autoFlipPassAndPlay: boolean;
   blunderShield?: boolean;
+  threatRadar?: boolean;
+  threatRadarDifficulty?: 'easy' | 'hard';
 }
 
 export interface EvaluationResult {

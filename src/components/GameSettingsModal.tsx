@@ -7,7 +7,7 @@ import {
   PlayerColorChoice,
   TimeControl,
 } from '../types/chess';
-import { X, Check, Bot, Users, Edit3, Volume2, Sparkles, SlidersHorizontal, Shield } from 'lucide-react';
+import { X, Check, Bot, Users, Edit3, Volume2, Sparkles, SlidersHorizontal, Shield, ShieldAlert } from 'lucide-react';
 
 interface GameSettingsModalProps {
   isOpen: boolean;
@@ -293,6 +293,53 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
                 className="w-4 h-4 accent-[#81b64c] cursor-pointer"
               />
             </label>
+
+            {/* Threat Radar with Easy and Hard Modes */}
+            <div className="py-2 px-1 hover:bg-[#21201d] rounded-lg space-y-2">
+              <label className="flex items-center justify-between cursor-pointer">
+                <div className="flex items-center space-x-2">
+                  <ShieldAlert className="w-4 h-4 text-rose-400" />
+                  <div>
+                    <span className="text-xs text-neutral-300 font-medium">Threat Radar</span>
+                    <p className="text-[10px] text-neutral-500">Detect hanging & vulnerable pieces in real-time</p>
+                  </div>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={!!settings.threatRadar}
+                  onChange={(e) => onUpdateSettings({ threatRadar: e.target.checked })}
+                  className="w-4 h-4 accent-rose-500 cursor-pointer"
+                />
+              </label>
+
+              {settings.threatRadar && (
+                <div className="ml-6 flex items-center gap-2 pt-1 border-t border-[#312e2b]">
+                  <span className="text-[11px] text-neutral-400 font-semibold">Mode:</span>
+                  <button
+                    type="button"
+                    onClick={() => onUpdateSettings({ threatRadarDifficulty: 'easy' })}
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition ${
+                      settings.threatRadarDifficulty !== 'hard'
+                        ? 'bg-rose-500 text-white'
+                        : 'bg-[#2b2723] text-neutral-400 hover:text-white'
+                    }`}
+                  >
+                    Easy (Arrows & Warnings)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onUpdateSettings({ threatRadarDifficulty: 'hard' })}
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition ${
+                      settings.threatRadarDifficulty === 'hard'
+                        ? 'bg-rose-500 text-white'
+                        : 'bg-[#2b2723] text-neutral-400 hover:text-white'
+                    }`}
+                  >
+                    Hard (Subtle Dots Only)
+                  </button>
+                </div>
+              )}
+            </div>
 
             {settings.mode === 'pass-and-play' && (
               <label className="flex items-center justify-between cursor-pointer py-1.5 px-1 hover:bg-[#21201d] rounded-lg">

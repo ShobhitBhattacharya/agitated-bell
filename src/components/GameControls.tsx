@@ -9,12 +9,16 @@ import {
   Volume2,
   VolumeX,
   Settings,
+  ShieldAlert,
 } from 'lucide-react';
 
 interface GameControlsProps {
   canUndo: boolean;
   canRedo: boolean;
   soundEnabled: boolean;
+  threatRadarEnabled?: boolean;
+  threatRadarDifficulty?: 'easy' | 'hard';
+  onToggleThreatRadar?: () => void;
   onNewGame: () => void;
   onUndo: () => void;
   onRedo: () => void;
@@ -29,6 +33,9 @@ export const GameControls: React.FC<GameControlsProps> = React.memo(({
   canUndo,
   canRedo,
   soundEnabled,
+  threatRadarEnabled = false,
+  threatRadarDifficulty = 'easy',
+  onToggleThreatRadar,
   onNewGame,
   onUndo,
   onRedo,
@@ -149,9 +156,25 @@ export const GameControls: React.FC<GameControlsProps> = React.memo(({
         </button>
       </div>
 
-      {/* Sound toggle row */}
-      <div className="flex items-center justify-between px-2 pt-1 text-xs text-neutral-400">
-        <span className="text-[11px]">Audio Effects</span>
+      {/* Assists and Sound row */}
+      <div className="flex items-center justify-between px-2 pt-1 border-t border-[#2d2a26] text-xs text-neutral-400">
+        {onToggleThreatRadar ? (
+          <button
+            onClick={onToggleThreatRadar}
+            className={`flex items-center space-x-1.5 transition px-2 py-0.5 rounded text-[11px] font-semibold border ${
+              threatRadarEnabled
+                ? 'bg-rose-500/15 text-rose-300 border-rose-500/30'
+                : 'text-neutral-400 hover:text-neutral-200 border-transparent hover:bg-[#2b2723]'
+            }`}
+            title="Toggle Threat Radar (Hanging piece detection)"
+          >
+            <ShieldAlert className={`w-3.5 h-3.5 ${threatRadarEnabled ? 'text-rose-400' : 'text-neutral-500'}`} />
+            <span>Radar: {threatRadarEnabled ? (threatRadarDifficulty === 'hard' ? 'Hard' : 'Easy') : 'Off'}</span>
+          </button>
+        ) : (
+          <span className="text-[11px]">Audio Effects</span>
+        )}
+
         <button
           onClick={onToggleSound}
           className="flex items-center space-x-1 hover:text-white transition"

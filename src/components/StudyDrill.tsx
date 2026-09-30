@@ -1,9 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { ArrowLeft, Check, RotateCcw, X, GitBranch, Sparkles } from 'lucide-react';
+import { ArrowLeft, Check, RotateCcw, X, GitBranch, Sparkles, Brain, Lightbulb, Trophy, Heart } from 'lucide-react';
 import { Chess, Color, Square } from 'chess.js';
+import confetti from 'canvas-confetti';
 import { ChessBoard } from './ChessBoard';
 import { PuzzleRushPuzzle } from '../utils/puzzleRush';
 import { OpeningVariation } from '../utils/studyTools';
+
+export type DrillRecallMode = 'guided' | 'blind_easy' | 'blind_hard';
 
 export interface StudyDrillProps {
   title: string;
@@ -80,6 +83,10 @@ export const StudyDrill: React.FC<StudyDrillProps> = ({
     ? (new Chess(initialFen).turn() as Color)
     : 'w';
   const [playerColor, setPlayerColor] = useState<Color>(initialTurn);
+  const [recallMode, setRecallMode] = useState<DrillRecallMode>('guided');
+  const [strikesLeft, setStrikesLeft] = useState<number>(3);
+  const [revealedHint, setRevealedHint] = useState<string | null>(null);
+
   const [position, setPosition] = useState<PositionState>(() =>
     createPosition(kind, activeMoves, puzzle, initialFen, initialTurn)
   );
@@ -96,15 +103,21 @@ export const StudyDrill: React.FC<StudyDrillProps> = ({
       : 'Find the best endgame move.'
   );
 
-  const reset = (color = playerColor, movesToUse = activeMoves) => {
+  const reset = (color = playerColor, movesToUse = activeMoves, targetRecallMode = recallMode) => {
     const next = createPosition(kind, movesToUse, puzzle, initialFen, color);
     setPlayerColor(color);
     setPosition(next);
     setFen(next.chess.fen());
     setLastMove(null);
     setIsSolved(false);
+    setStrikesLeft(targetRecallMode === 'blind_hard' ? 1 : 3);
+    setRevealedHint(null);
     setFeedback(
-      kind === 'opening'
+      targetRecallMode === 'blind_hard'
+        ? 'Hard Blind Recall: 1 mistake resets the drill. Play strictly from memory!'
+        : targetRecallMode === 'blind_easy'
+        ? 'Easy Blind Recall: 3 attempts allowed. Tap Hint if you need help!'
+        : kind === 'opening'
         ? `Play the theoretical moves as ${color === 'w' ? 'White' : 'Black'}.`
         : initialFen
         ? 'Find the winning endgame technique.'
@@ -127,6 +140,39 @@ export const StudyDrill: React.FC<StudyDrillProps> = ({
     setFeedback(`Switched to ${varName}. Play as ${playerColor === 'w' ? 'White' : 'Black'}.`);
   };
 
+  const targetSolution = useMemo(() => {
+    return activeMoves && activeMoves.length > 0 ? activeMoves : (puzzle?.solution ?? []);
+  }, [activeMoves, puzzle]);
+
+  const handleRevealHint = () => {
+    const isSanMoves = activeMoves && activeMoves.length > 0;
+    const solution = targetSolution;
+    const expected = solution[position.moveIndex];
+    if (!expected) return;
+
+    const expectedMove = isSanMoves
+      ? position.chess.moves({ verbose: true }).find((m) => m.san === expected)
+      : undefined;
+
+    if (expectedMove) {
+      const pieceName =
+        expectedMove.piece === 'p'
+          ? 'Pawn'
+          : expectedMove.piece === 'n'
+          ? 'Knight'
+          : expectedMove.piece === 'b'
+          ? 'Bishop'
+          : expectedMove.piece === 'r'
+          ? 'Rook'
+          : expectedMove.piece === 'q'
+          ? 'Queen'
+          : 'King';
+      setRevealedHint(`Hint: Move your ${pieceName} from ${expectedMove.from.toUpperCase()}`);
+    } else {
+      setRevealedHint(`Hint: Next move starts from square ${expected.slice(0, 2).toUpperCase()}`);
+    }
+  };
+
   const handleMove = (from: Square, to: Square): boolean => {
     if (isSolved) return false;
     const isSanMoves = activeMoves && activeMoves.length > 0;
@@ -141,6 +187,33 @@ export const StudyDrill: React.FC<StudyDrillProps> = ({
     const expectedTo = isSanMoves ? expectedMove?.to : expected.slice(2, 4);
 
     if (expectedFrom !== from || expectedTo !== to) {
+      if (recallMode === 'blind_hard') {
+        const next = createPosition(kind, activeMoves, puzzle, initialFen, playerColor);
+        setPosition(next);
+        setFen(next.chess.fen());
+        setLastMove(null);
+        setRevealedHint(null);
+        setFeedback(`❌ Mistake (${expected} was correct). In Hard Blind mode, 1 error resets the line. Try again!`);
+        return false;
+      }
+
+      if (recallMode === 'blind_easy') {
+        const remaining = strikesLeft - 1;
+        setStrikesLeft(remaining);
+        if (remaining <= 0) {
+          const next = createPosition(kind, activeMoves, puzzle, initialFen, playerColor);
+          setPosition(next);
+          setFen(next.chess.fen());
+          setLastMove(null);
+          setStrikesLeft(3);
+          setRevealedHint(null);
+          setFeedback(`Out of attempts! The move was ${expected}. Drill reset — try again from move 1!`);
+        } else {
+          setFeedback(`Incorrect move from memory. ${remaining} attempt${remaining === 1 ? '' : 's'} remaining.`);
+        }
+        return false;
+      }
+
       setFeedback(
         isSanMoves
           ? `Not the theoretical move here. Look for ${expected}.`
@@ -179,11 +252,23 @@ export const StudyDrill: React.FC<StudyDrillProps> = ({
       setPosition({ chess: position.chess, moveIndex: nextMoveIndex });
       setFen(position.chess.fen());
       setLastMove(resultingLastMove);
+      setRevealedHint(null);
 
       if (nextMoveIndex >= solution.length) {
         setIsSolved(true);
+        if (recallMode !== 'guided') {
+          try {
+            confetti({ particleCount: 75, spread: 60, origin: { y: 0.6 } });
+          } catch {
+            // non-fatal
+          }
+        }
         setFeedback(
-          kind === 'opening'
+          recallMode === 'blind_hard'
+            ? '🏆 Grandmaster Memory! You mastered the entire line blindly with zero mistakes!'
+            : recallMode === 'blind_easy'
+            ? `🎯 Repertoire Mastered! Completed blind recall with ${strikesLeft}/3 lives remaining!`
+            : kind === 'opening'
             ? `${activeVariation ? activeVariation.name : 'Model line'} complete (${solution.length} plies)!`
             : initialFen
             ? 'Endgame technique mastered!'
@@ -191,7 +276,9 @@ export const StudyDrill: React.FC<StudyDrillProps> = ({
         );
       } else {
         setFeedback(
-          kind === 'opening'
+          recallMode !== 'guided'
+            ? 'Correct! Next move from memory...'
+            : kind === 'opening'
             ? 'Good. Continue the theoretical line.'
             : initialFen
             ? 'Correct move. Continue the technique.'
@@ -251,47 +338,100 @@ export const StudyDrill: React.FC<StudyDrillProps> = ({
 
         <div className="grid gap-6 p-4 sm:p-6 lg:grid-cols-[minmax(0,620px)_1fr]">
           <section>
-            {/* Opening Variations and Side Selector */}
-            {kind === 'opening' && (
-              <div className="mb-3 space-y-2.5">
-                {variations.length > 0 && (
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#9db879]">
-                      <GitBranch className="h-3 w-3" />
-                      <span>Choose Variation / Line</span>
-                    </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => handleSelectVariation(null)}
-                        className={`rounded px-2.5 py-1 text-xs font-semibold transition ${
-                          activeVariationId === null
-                            ? 'bg-[#b2ca7c] text-[#1b201a] font-bold shadow'
-                            : 'bg-[#222720] text-[#c6ccbf] border border-[#3b4334] hover:bg-[#2b3228]'
-                        }`}
-                      >
-                        Main Best Line ({openingMoves.length} plies)
-                      </button>
-                      {variations.map((v) => (
-                        <button
-                          key={v.id}
-                          type="button"
-                          onClick={() => handleSelectVariation(v.id)}
-                          className={`rounded px-2.5 py-1 text-xs font-semibold transition flex items-center gap-1 ${
-                            activeVariationId === v.id
-                              ? 'bg-[#b2ca7c] text-[#1b201a] font-bold shadow'
-                              : 'bg-[#222720] text-[#c6ccbf] border border-[#3b4334] hover:bg-[#2b3228]'
-                          }`}
-                        >
-                          <span>{v.name}</span>
-                          <span className="text-[10px] opacity-75">({v.moves.length}p)</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
+            {/* Opening Variations */}
+            {kind === 'opening' && variations.length > 0 && (
+              <div className="mb-3 space-y-1">
+                <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#9db879]">
+                  <GitBranch className="h-3 w-3" />
+                  <span>Choose Variation / Line</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => handleSelectVariation(null)}
+                    className={`rounded px-2.5 py-1 text-xs font-semibold transition ${
+                      activeVariationId === null
+                        ? 'bg-[#b2ca7c] text-[#1b201a] font-bold shadow'
+                        : 'bg-[#222720] text-[#c6ccbf] border border-[#3b4334] hover:bg-[#2b3228]'
+                    }`}
+                  >
+                    Main Best Line ({openingMoves.length} plies)
+                  </button>
+                  {variations.map((v) => (
+                    <button
+                      key={v.id}
+                      type="button"
+                      onClick={() => handleSelectVariation(v.id)}
+                      className={`rounded px-2.5 py-1 text-xs font-semibold transition flex items-center gap-1 ${
+                        activeVariationId === v.id
+                          ? 'bg-[#b2ca7c] text-[#1b201a] font-bold shadow'
+                          : 'bg-[#222720] text-[#c6ccbf] border border-[#3b4334] hover:bg-[#2b3228]'
+                      }`}
+                    >
+                      <span>{v.name}</span>
+                      <span className="text-[10px] opacity-75">({v.moves.length}p)</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
-                <div className="flex items-center justify-between gap-3 pt-1">
+            {/* Drill Mode Toolbar */}
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-md border border-[#343a32] bg-[#1d221c] p-2">
+              <div className="flex items-center gap-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#aeb5a5] mr-1">
+                  Drill Mode:
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRecallMode('guided');
+                    reset(playerColor, activeMoves, 'guided');
+                  }}
+                  className={`rounded px-2.5 py-1 text-xs font-bold transition ${
+                    recallMode === 'guided'
+                      ? 'bg-[#b2ca7c] text-[#1b201a] shadow'
+                      : 'bg-[#222720] text-[#c6ccbf] border border-[#3b4334] hover:bg-[#2b3228]'
+                  }`}
+                >
+                  Guided
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRecallMode('blind_easy');
+                    reset(playerColor, activeMoves, 'blind_easy');
+                  }}
+                  className={`rounded px-2.5 py-1 text-xs font-bold transition flex items-center gap-1 ${
+                    recallMode === 'blind_easy'
+                      ? 'bg-amber-500 text-neutral-900 shadow'
+                      : 'bg-[#222720] text-amber-400 border border-[#3b4334] hover:bg-[#2b3228]'
+                  }`}
+                  title="Recall moves with 3 lives and optional piece hints"
+                >
+                  <Brain className="w-3 h-3" />
+                  <span>Blind (Easy)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRecallMode('blind_hard');
+                    reset(playerColor, activeMoves, 'blind_hard');
+                  }}
+                  className={`rounded px-2.5 py-1 text-xs font-bold transition flex items-center gap-1 ${
+                    recallMode === 'blind_hard'
+                      ? 'bg-rose-500 text-white shadow'
+                      : 'bg-[#222720] text-rose-400 border border-[#3b4334] hover:bg-[#2b3228]'
+                  }`}
+                  title="Strict 1-strike sudden death from memory"
+                >
+                  <Trophy className="w-3 h-3" />
+                  <span>Blind (Hard)</span>
+                </button>
+              </div>
+
+              {kind === 'opening' && (
+                <div className="flex items-center gap-2">
                   <span className="text-xs font-semibold uppercase tracking-wider text-[#aeb5a5]">
                     Play as
                   </span>
@@ -316,8 +456,8 @@ export const StudyDrill: React.FC<StudyDrillProps> = ({
                     ))}
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
             <ChessBoard
               key={`${kind}-${title}-${fen}-${playerColor}-${activeVariationId ?? 'main'}`}
@@ -362,12 +502,138 @@ export const StudyDrill: React.FC<StudyDrillProps> = ({
               </div>
             )}
 
-            <div className="rounded-md border border-[#373d35] bg-[#222720] p-4">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-[#b2ca7c]">
-                {activeMoves.length > 0 ? (activeVariation ? 'Variation Moves' : 'Model Best Line') : 'Themes'}
+            {recallMode !== 'guided' ? (
+              <div className="rounded-md border border-[#373d35] bg-[#222720] p-4 space-y-3">
+                <div className="flex items-center justify-between border-b border-[#31362e] pb-2">
+                  <div className="flex items-center gap-2">
+                    {recallMode === 'blind_easy' ? (
+                      <div className="flex items-center gap-1.5 text-amber-400 font-bold text-xs">
+                        <Brain className="h-4 w-4" />
+                        <span>Blind Recall (Easy)</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5 text-rose-400 font-bold text-xs">
+                        <Trophy className="h-4 w-4" />
+                        <span>Blind Recall (Hard)</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {recallMode === 'blind_easy' ? (
+                    <div className="flex items-center gap-1 text-xs font-bold">
+                      <span className="text-[#a0a89a] text-[10px] uppercase mr-0.5">Lives:</span>
+                      {[0, 1, 2].map((i) => (
+                        <Heart
+                          key={i}
+                          className={`h-3.5 w-3.5 transition-colors ${
+                            i < strikesLeft
+                              ? 'text-rose-500 fill-rose-500'
+                              : 'text-neutral-600 fill-neutral-800'
+                          }`}
+                        />
+                      ))}
+                      <span className="ml-1 text-[11px] text-[#c6ccbf]">({strikesLeft}/3)</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1 rounded bg-rose-950/70 border border-rose-800/50 px-2 py-0.5 text-[10px] font-bold text-rose-300">
+                      <span>💀 Sudden Death</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Progress bar */}
+                <div>
+                  <div className="flex items-center justify-between text-xs mb-1">
+                    <span className="text-[#b2ca7c] font-semibold text-[11px] uppercase tracking-wider">
+                      Memory Progress
+                    </span>
+                    <span className="font-mono text-[#d8dfd1] text-xs">
+                      {position.moveIndex} / {targetSolution.length} plies (
+                      {Math.round(
+                        (position.moveIndex / Math.max(1, targetSolution.length)) * 100
+                      )}
+                      %)
+                    </span>
+                  </div>
+                  <div className="w-full bg-[#161a15] h-2 rounded-full overflow-hidden border border-[#2e352b]">
+                    <div
+                      className={`h-full transition-all duration-300 ${
+                        recallMode === 'blind_hard' ? 'bg-rose-500' : 'bg-amber-500'
+                      }`}
+                      style={{
+                        width: `${Math.min(
+                          100,
+                          Math.round(
+                            (position.moveIndex / Math.max(1, targetSolution.length)) * 100
+                          )
+                        )}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Masked Moves Display */}
+                <div>
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-[#9db879] mb-1.5">
+                    Move Sequence
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto p-2 rounded bg-[#181c17] border border-[#2d3329]">
+                    {targetSolution.map((m, idx) => {
+                      const isPlayed = idx < position.moveIndex;
+                      const isCurrent = idx === position.moveIndex;
+                      return (
+                        <span
+                          key={idx}
+                          className={`px-1.5 py-0.5 rounded text-xs font-mono transition ${
+                            isPlayed
+                              ? 'bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 font-bold'
+                              : isCurrent
+                              ? 'bg-amber-500/20 border border-amber-400 text-amber-300 font-extrabold animate-pulse'
+                              : 'bg-neutral-900/60 border border-neutral-800 text-neutral-500'
+                          }`}
+                        >
+                          {isPlayed ? m : isCurrent ? '???' : '•••'}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Peek Hint button for Easy mode */}
+                {recallMode === 'blind_easy' && !isSolved && (
+                  <div className="pt-1">
+                    {revealedHint ? (
+                      <div className="rounded border border-amber-500/40 bg-amber-950/30 p-2.5 text-xs text-amber-200 flex items-start gap-2">
+                        <Lightbulb className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                        <div>{revealedHint}</div>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleRevealHint}
+                        className="inline-flex items-center gap-1.5 rounded border border-amber-600/50 bg-amber-950/40 px-3 py-1.5 text-xs font-semibold text-amber-300 hover:bg-amber-900/50 transition cursor-pointer"
+                      >
+                        <Lightbulb className="w-3.5 h-3.5 text-amber-400" />
+                        Peek Hint (Piece & Square)
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {recallMode === 'blind_hard' && (
+                  <p className="text-[11px] text-neutral-400 italic">
+                    Strict GM rules: No hints allowed. 1 error resets from ply 1.
+                  </p>
+                )}
               </div>
-              <p className="mt-2 text-xs font-mono leading-6 text-[#e0e6d8] break-words">{content}</p>
-            </div>
+            ) : (
+              <div className="rounded-md border border-[#373d35] bg-[#222720] p-4">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-[#b2ca7c]">
+                  {activeMoves.length > 0 ? (activeVariation ? 'Variation Moves' : 'Model Best Line') : 'Themes'}
+                </div>
+                <p className="mt-2 text-xs font-mono leading-6 text-[#e0e6d8] break-words">{content}</p>
+              </div>
+            )}
 
             {kind === 'endgame' && puzzle?.sourceUrl && (
               <p className="text-xs text-[#8e9787]">

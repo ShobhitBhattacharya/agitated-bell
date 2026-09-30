@@ -19,6 +19,7 @@ import { GameOverModal } from './components/GameOverModal';
 import { GameSettingsModal, TIME_CONTROL_PRESETS } from './components/GameSettingsModal';
 import { soundEngine } from './utils/audio';
 import { evaluateBoard, getBestMove } from './utils/chessEngine';
+import { detectBoardThreats } from './utils/threatRadar';
 import { PIECE_VALUES } from './utils/evalTables';
 import {
   detectOpeningFromMoves,
@@ -81,6 +82,8 @@ export const App: React.FC = () => {
     showLegalMoves: true,
     showEvaluationBar: true,
     autoFlipPassAndPlay: false,
+    threatRadar: false,
+    threatRadarDifficulty: 'easy',
   });
 
   // Effective Player Color in vs-ai
@@ -169,6 +172,19 @@ export const App: React.FC = () => {
   const [reviewResult, setReviewResult] = useState<string>('*');
   const [reviewPlayerColor, setReviewPlayerColor] = useState<PieceColor>('w');
   const hasArchivedGameRef = useRef<boolean>(false);
+
+  const reviewFinalFen = useMemo(() => {
+    if (reviewMoves.length === 0) return undefined;
+    try {
+      const c = new Chess();
+      for (const m of reviewMoves) {
+        c.move(m);
+      }
+      return c.fen();
+    } catch {
+      return undefined;
+    }
+  }, [reviewMoves]);
 
   useEffect(() => {
     saveStudyProgress(studyProgress);
@@ -914,6 +930,11 @@ export const App: React.FC = () => {
     return getAdaptiveTrainerPrompt(moveSequence);
   }, [history]);
 
+  const threatRadarData = useMemo(() => {
+    if (!settings.threatRadar) return null;
+    return detectBoardThreats(chess, playerColor, settings.threatRadarDifficulty || 'easy');
+  }, [settings.threatRadar, settings.threatRadarDifficulty, chess, playerColor, fen]);
+
   const currentKnowledgeTopic = useMemo(
     () => getKnowledgeTopicById(selectedKnowledgeTopicId) ?? getKnowledgeTopicById('develop-first'),
     [selectedKnowledgeTopicId]
@@ -1014,6 +1035,7 @@ export const App: React.FC = () => {
           blackName={reviewBlackName}
           result={reviewResult}
           movesCount={reviewMoves.length}
+          fen={reviewFinalFen}
         />
       </>
     );
@@ -1150,6 +1172,19 @@ export const App: React.FC = () => {
             />
           </div>
 
+          {/* Threat Radar Alert Banner */}
+          {settings.threatRadar && threatRadarData?.hasThreats && (
+            <div className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg bg-rose-950/60 border border-rose-500/40 text-xs text-rose-200 animate-fade-in shadow-xs">
+              <div className="flex items-center gap-1.5 font-semibold truncate">
+                <ShieldAlert className="w-4 h-4 text-rose-400 shrink-0" />
+                <span className="truncate">{threatRadarData.summaryText}</span>
+              </div>
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-900/60 border border-rose-600/40 text-rose-300 uppercase tracking-wider shrink-0 ml-2">
+                {settings.threatRadarDifficulty === 'hard' ? 'Hard Radar' : 'Easy Radar'}
+              </span>
+            </div>
+          )}
+
           {/* Board + Evaluation Bar Container */}
           <div className="w-full flex space-x-2 sm:space-x-3 items-stretch justify-center">
             {/* Live Evaluation Bar (Chess.com Style) */}
@@ -1175,6 +1210,8 @@ export const App: React.FC = () => {
                 lastMove={lastMove}
                 onMove={executeMove}
                 onRequestPromotion={(from, to) => setPromotionPending({ from, to })}
+                customHighlights={threatRadarData?.highlights}
+                customArrows={threatRadarData?.arrows}
               />
             </div>
           </div>
@@ -1206,6 +1243,11 @@ export const App: React.FC = () => {
             canUndo={history.length > 0 && !isAiThinking}
             canRedo={redoStack.length > 0 && !isAiThinking}
             soundEnabled={settings.soundEnabled}
+            threatRadarEnabled={!!settings.threatRadar}
+            threatRadarDifficulty={settings.threatRadarDifficulty || 'easy'}
+            onToggleThreatRadar={() =>
+              setSettings((s) => ({ ...s, threatRadar: !s.threatRadar }))
+            }
             onNewGame={() => startNewGame()}
             onUndo={handleUndo}
             onRedo={handleRedo}
@@ -1523,6 +1565,7 @@ export const App: React.FC = () => {
         result={winner === 'w' ? '1-0' : winner === 'b' ? '0-1' : termination !== 'in_progress' ? '1/2-1/2' : '*'}
         movesCount={history.length}
         openingName={studyContext.openingWithVariations?.opening.name}
+        fen={fen}
       />
 
       {/* Bot Selector Modal */}
